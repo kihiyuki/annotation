@@ -84,9 +84,55 @@ class Data(object):
         print("annotated:", (self.df[self.col_label]!=self.label_null).sum())
         return None
 
+    def get_labelled(
+        self,
+        label: str = None,
+        sample: bool = False,
+        head: int = False,
+        n: int = None,
+    ) -> pd.DataFrame:
+        df = self.df
+        if label is None:
+            _df = df[df[self.col_label]==self.label_null]
+        else:
+            _df =  df[df[self.col_label]==label]
+
+        if sample and head:
+            warn("Both 'sample' and 'head' are selected")
+        if n is None:
+            n = self.n
+        if sample:
+            _df = _df.sample(n=min(self.n,len(_df)))
+        if head:
+            _df = _df.head(n)
+        if self.verbose:
+            print("data.get_labelled({}): {}".format(
+                "nolabel" if label is None else label,
+                len(_df),
+            ))
+
+        return _df
+
+    def register(self, workdir) -> None:
+        for labeldir in workdir.iterdir():
+            if labeldir.is_dir():
+                label = labeldir.name
+                if label not in self.labels:
+                    print(f"Label '{label}' found")
+                    self.labels.append(label)
+        for label in self.labels:
+            filepaths = (workdir / label).glob(f"*{self.imgext}")
+            for filepath in filepaths:
+                name = filepath.name.rstrip(self.imgext)
+                idxs = self.df[self.df[self.col_filename]==name].index
+                if self.verbose:
+                    print("data.register: label={} id={} idx={}".format(
+                        label, name, list(idxs)))
+                self.df.loc[idxs, self.col_label] = label
+        return None
 
 def deploy(
-    df,
+    data,
     datafile, workdir, n, n_example, col_filename, col_img, col_label,
     labels, label_null, random, imgext, vmin, vmax, verbose,
     figsize=(5,5),
@@ -109,45 +155,22 @@ def deploy(
             _saveimg(m=row[col_img], filepath=str(filepath))
 
     workdir.clear(subdirnames=labels)
-    _df = df[df[col_label]==label_null]
-    if random:
-        _df = _df.sample(n=min(n,len(_df)))
-    else:
-        _df = _df.head(n)
-    if verbose:
-        print("_saveimgs: nolabel", len(_df))
+    _df = data.get_labelled(label=None, sample=random, head=not random)
     _saveimgs(df=_df, dirpath=workdir)
     # Examples
     for label in labels:
-        _df = df[df[col_label]==label]
-        _df = _df.sample(n=min(n_example,len(_df)))
-        if verbose:
-            print("_saveimgs:", label, len(_df))
+        _df = data.get_labelled(label=label, sample=True, n=n_example)
         _saveimgs(df=_df, dirpath=(workdir / label))
     return None
 
 
 def register(
-    df,
+    data,
     datafile, workdir, n, n_example, col_filename, col_img, col_label,
     labels, label_null, random, imgext, vmin, vmax, verbose,
     backup=False,
 ) -> None:
-    for labeldir in workdir.iterdir():
-        if labeldir.is_dir():
-            label = labeldir.name
-            if label not in labels:
-                print(f"Label '{label}' found")
-                labels.append(label)
-
-    for label in labels:
-        filepaths = (workdir / label).glob(f"*{imgext}")
-        for filepath in filepaths:
-            name = filepath.name.rstrip(imgext)
-            idxs = df[df[col_filename]==name].index
-            if verbose:
-                print("register:", label, name, idxs)
-            df.loc[idxs, col_label] = label
+    data.register(workdir=workdir)
 
     datafile_str = str(datafile)
     # if verbose:
@@ -156,7 +179,7 @@ def register(
         _backupfile(datafile_str, verbose=verbose)
     if verbose:
         print("to_pickle:", datafile_str)
-    df.to_pickle(datafile_str)
+    data.df.to_pickle(datafile_str)
     workdir.clear(subdirnames=[], verbose=verbose)
 
 
@@ -263,9 +286,9 @@ def main(args=None) -> None:
     data.load()
 
     if is_deploy:
-        deploy(df=data.df, **config)
+        deploy(data=data, **config)
 
     if is_register:
-        register(df=data.df, **config)
+        register(data=data, **config)
 
     return None
