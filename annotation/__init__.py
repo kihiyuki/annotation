@@ -101,7 +101,7 @@ class Data(object):
         if n is None:
             n = self.n
         if sample:
-            _df = _df.sample(n=min(self.n,len(_df)))
+            _df = _df.sample(n=min(n,len(_df)))
         if head:
             _df = _df.head(n)
         if self.verbose:
