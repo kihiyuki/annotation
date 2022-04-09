@@ -56,7 +56,10 @@ def _backupfile(filepath, suffix="~") -> None:
 class Data(object):
     def __init__(self, config: dict) -> None:
         for k in CONFIG.keys():
-            self.__setattr__(k, config[k])
+            if k in config:
+                self.__setattr__(k, config[k])
+            else:
+                self.__setattr__(k, CONFIG[k])
         return None
 
     def load(self) -> None:
@@ -267,10 +270,6 @@ def main(args=None) -> None:
         config[k] = pathlib.Path(config[k]).resolve()
     # WorkDir
     config["workdir"] = WorkDir(config["workdir"])
-    # None
-    # for k in ["label_null"]:
-    #     if config[k] == "None":
-    #         config[k] = None
 
     if n_makesample is not None:
         make_sample_datafile(n_make=n_makesample, **config)
