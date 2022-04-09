@@ -281,6 +281,6 @@ def main(args=None) -> None:
         deploy(data=data, **config)
 
     if is_register:
-        data.register(data=data)
+        data.register()
 
     return None
