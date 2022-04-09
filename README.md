@@ -31,12 +31,11 @@ optional arguments:
 
 ### 注意
 
-デプロイと登録の度、
-workdir (デフォルトでは `./work`)
-を
-`shutil.rmtree(workdir)`
-で空にします。
-workdirにはアノテーション作業用データ以外を置かないでください。
+- デプロイと登録の度、
+  workdir (デフォルトでは `./work`) を
+  `shutil.rmtree(workdir)` で空にします。
+  workdirにはアノテーション作業用データ以外を置かないでください。
+- 空文字列をラベルとして使うことはできません。
 
 ## datafile
 
@@ -87,6 +86,18 @@ imgext = .png
 vmin = 0.
 ; seaborn.heatmap.vmax
 vmax = 2.
+```
+
+### WM-811Kで使う
+
+```ini
+[DEFAULT]
+datafile = LSWMD.pkl
+col_filename = index
+col_img = waferMap
+col_label = failureType
+labels = 
+label_null = []
 ```
 
 ## LICENSE
