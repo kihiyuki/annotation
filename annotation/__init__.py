@@ -2,17 +2,16 @@ import sys
 import argparse
 import shutil
 from pathlib import Path
-from tabnanny import verbose
 from warnings import warn
 
-# import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from .lib import read_config
+from .lib import read_config, gen_randmaps, gen_randstrs
 
-__version__ = "0.1.1"
+
+__version__ = "0.2.0"
 
 # NOTE: int or float or str
 CONFIG = dict(
@@ -45,6 +44,13 @@ def _cleardir(dirpath: Path, subdirnames: list, verbose=False) -> None:
     return None
 
 
+def _backupfile(filepath, suffix="~", verbose=False) -> None:
+    filepath_str = str(filepath)
+    filepath_str_back = filepath_str + suffix
+    print("backup:", filepath_str_back)
+    shutil.copyfile(filepath_str, filepath_str_back)
+
+
 def _print_count(df, col_label, label_null) -> None:
     print("len(df):", len(df))
     # if label_null is None:
@@ -72,7 +78,7 @@ def deploy(
     df,
     datafile, workdir, n, n_example, col_filename, col_img, col_label,
     labels, label_null, random, imgext, vmin, vmax, verbose,
-    figsize=(5,5)
+    figsize=(5,5),
 ) -> None:
     def _saveimg(m, filepath) -> None:
         fig = plt.figure(figsize=figsize)
@@ -109,6 +115,7 @@ def deploy(
         _saveimgs(df=_df, dirpath=(workdir / label))
     return None
 
+
 def register(
     df,
     datafile, workdir, n, n_example, col_filename, col_img, col_label,
@@ -135,17 +142,36 @@ def register(
     if verbose:
         _print_count(df=df, col_label=col_label, label_null=label_null)
     if backup:
-        datafile_str_back = datafile_str + "~"
-        if verbose:
-            print("backup:", datafile_str_back)
-        shutil.copyfile(datafile_str, datafile_str_back)
+        _backupfile(datafile_str, verbose=verbose)
     if verbose:
         print("to_pickle:", datafile_str)
     df.to_pickle(datafile_str)
     _cleardir(dirpath=workdir, subdirnames=[], verbose=verbose)
 
 
-def main(args=None):
+def make_sample_datafile(
+    datafile, workdir, n, n_example, col_filename, col_img, col_label,
+    labels, label_null, random, imgext, vmin, vmax, verbose,
+    n_make=1000, backup=False,
+) -> None:
+    datafile_str = "./sample.pkl.xz"
+    imgs = gen_randmaps(n=n_make)
+    ids = gen_randstrs(n=n_make)
+
+    df = pd.DataFrame()
+    df[col_filename] = ids
+    df[col_img] = list(iter(imgs))
+    if Path(datafile_str).is_file() and backup:
+        _backupfile(datafile_str, verbose=verbose)
+
+    # save
+    print("to_pickle:", datafile_str)
+    df.to_pickle(datafile_str)
+
+    return None
+
+
+def main(args=None) -> None:
     if args is None:
         args = sys.argv[1:]
 
@@ -175,6 +201,10 @@ def main(args=None):
         "--workdir", "-w",
         required=False, default=None,
         help="Working directory")
+    parser.add_argument(
+        "--makesample",
+        required=False, default=None,
+        help="Make sample datafile (number)")
 
     pargs = parser.parse_args(args=args)
     is_deploy = bool(pargs.deploy)
@@ -184,6 +214,10 @@ def main(args=None):
         config["datafile"] = pargs.file
     if pargs.workdir is not None:
         config["workdir"] = pargs.workdir
+    if pargs.makesample is not None:
+        n_makesample = int(pargs.makesample)
+    else:
+        n_makesample = None
 
     # bool
     for k in ["random"]:
@@ -201,6 +235,10 @@ def main(args=None):
     # for k in ["label_null"]:
     #     if config[k] == "None":
     #         config[k] = None
+
+    if n_makesample is not None:
+        make_sample_datafile(n_make=n_makesample, **config)
+        return None
 
     if is_deploy and is_register:
         raise Exception("Both '--deploy' and '--register' are active")
@@ -221,3 +259,5 @@ def main(args=None):
 
     if is_register:
         register(df=df, **config)
+
+    return None
