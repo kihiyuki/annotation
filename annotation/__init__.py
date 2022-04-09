@@ -12,7 +12,7 @@ import seaborn as sns
 
 from .lib import read_config
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # NOTE: int or float or str
 CONFIG = dict(
