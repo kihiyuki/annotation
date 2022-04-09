@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # annotation
-*.png
+# *.png
 *.pkl*
 *.ini
 work/

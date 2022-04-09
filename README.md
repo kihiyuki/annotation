@@ -4,7 +4,9 @@
 アノテーション作業自体はファイルマネージャ上で
 「画像ファイルをディレクトリに振り分ける」ことで行う。
 
-本ツールの機能:
+![](doc/fig/dir.png)
+
+## 機能
 
 - Deploy: 画像データが含まれるDataFrame(Pickleファイル)から
   アノテーション作業ディレクトリを生成する。
@@ -112,6 +114,8 @@ vmax = 2.
 
 ### WM-811Kで使う
 
+`config.ini`
+
 ```ini
 [DEFAULT]
 datafile = LSWMD.pkl
@@ -121,6 +125,11 @@ col_label = failureType
 labels = 
 label_null = []
 ```
+
+[kaggle - WM-811K wafer map](https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map)
+(License: CC0)
+
+![](doc/fig/dir_wm811k.png)
 
 ## LICENSE
 
