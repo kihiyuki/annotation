@@ -116,15 +116,15 @@ class Data(object):
 
         return _df
 
-    def register(self, workdir) -> None:
-        for labeldir in workdir.iterdir():
+    def register(self, save=True, backup=True) -> None:
+        for labeldir in self.workdir.iterdir():
             if labeldir.is_dir():
                 label = labeldir.name
                 if label not in self.labels:
                     print(f"Label '{label}' found")
                     self.labels.append(label)
         for label in self.labels:
-            filepaths = (workdir / label).glob(f"*{self.imgext}")
+            filepaths = (self.workdir / label).glob(f"*{self.imgext}")
             for filepath in filepaths:
                 name = filepath.name.rstrip(self.imgext)
                 idxs = self.df[self.df[self.col_filename]==name].index
@@ -132,6 +132,18 @@ class Data(object):
                     print("data.register: label={} id={} idx={}".format(
                         label, name, list(idxs)))
                 self.df.loc[idxs, self.col_label] = label
+        if save:
+            self.save(backup=backup)
+        return None
+
+    def save(self, backup=True) -> None:
+        datafile_str = str(self.datafile)
+        if backup:
+            _backupfile(datafile_str)
+        if self.verbose:
+            print("data.save:", datafile_str)
+        self.df.to_pickle(datafile_str)
+        self.workdir.clear(subdirnames=[], verbose=self.verbose)
         return None
 
 def deploy(
@@ -165,25 +177,6 @@ def deploy(
         _df = data.get_labelled(label=label, sample=True, n=n_example)
         _saveimgs(df=_df, dirpath=(workdir / label))
     return None
-
-
-def register(
-    data,
-    datafile, workdir, n, n_example, col_filename, col_img, col_label,
-    labels, label_null, random, imgext, vmin, vmax, verbose,
-    backup=False,
-) -> None:
-    data.register(workdir=workdir)
-
-    datafile_str = str(datafile)
-    # if verbose:
-    #     _print_count(df=df, col_label=col_label, label_null=label_null)
-    if backup:
-        _backupfile(datafile_str, verbose=verbose)
-    if verbose:
-        print("to_pickle:", datafile_str)
-    data.df.to_pickle(datafile_str)
-    workdir.clear(subdirnames=[], verbose=verbose)
 
 
 def make_sample_datafile(
@@ -288,6 +281,6 @@ def main(args=None) -> None:
         deploy(data=data, **config)
 
     if is_register:
-        register(data=data, **config)
+        data.register(data=data)
 
     return None
