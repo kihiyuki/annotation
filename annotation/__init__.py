@@ -12,7 +12,7 @@ import seaborn as sns
 from .lib import read_config, gen_randmaps, gen_randstrs
 
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 # NOTE: int or float or str
 CONFIG = dict(
@@ -48,7 +48,7 @@ class WorkDir(type(pathlib.Path())):
 
 
 class Data(object):
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config=dict()) -> None:
         for k in CONFIG.keys():
             if k in config:
                 self.__setattr__(k, config[k])
