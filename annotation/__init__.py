@@ -2,6 +2,7 @@ import sys
 import argparse
 import shutil
 import pathlib
+from tabnanny import verbose
 from warnings import warn
 
 import pandas as pd
@@ -46,13 +47,6 @@ class WorkDir(type(pathlib.Path())):
         return None
 
 
-def _backupfile(filepath, suffix="~") -> None:
-    filepath_str = str(filepath)
-    filepath_str_back = filepath_str + suffix
-    print("backup:", filepath_str_back)
-    shutil.copyfile(filepath_str, filepath_str_back)
-
-
 class Data(object):
     def __init__(self, config: dict) -> None:
         for k in CONFIG.keys():
@@ -60,6 +54,8 @@ class Data(object):
                 self.__setattr__(k, config[k])
             else:
                 self.__setattr__(k, CONFIG[k])
+        if self.verbose:
+            print(config)
         return None
 
     def load(self) -> None:
@@ -163,37 +159,37 @@ class Data(object):
             self.save(backup=backup)
         return None
 
+    @staticmethod
+    def _save(df, filepath, backup=True, backup_suffix="~", verbose=False) -> None:
+        if backup and pathlib.Path(filepath).is_file():
+            filepath_str = str(filepath)
+            filepath_str_back = filepath_str + backup_suffix
+            print("backup:", filepath_str_back)
+            shutil.copyfile(filepath_str, filepath_str_back)
+
+        if verbose:
+            print("data.save:", filepath)
+        df.to_pickle(filepath)
+
     def save(self, backup=True) -> None:
-        datafile_str = str(self.datafile)
-        if backup:
-            _backupfile(datafile_str)
-        if self.verbose:
-            print("data.save:", datafile_str)
-        self.df.to_pickle(datafile_str)
+        self._save(
+            df=self.df, filepath=str(self.datafile),
+            backup=backup, verbose=self.verbose)
         self.workdir.clear(subdirnames=[], verbose=self.verbose)
         return None
 
+    def save_samplefile(
+        self, filepath="./sample.pkl.xz", n=1000, backup=True) -> None:
+        imgs = gen_randmaps(n=n)
+        ids = gen_randstrs(n=n)
 
-def make_sample_datafile(
-    datafile, workdir, n, n_example, col_filename, col_img, col_label,
-    labels, label_null, random, imgext, vmin, vmax, verbose,
-    n_make=1000, backup=False,
-) -> None:
-    datafile_str = "./sample.pkl.xz"
-    imgs = gen_randmaps(n=n_make)
-    ids = gen_randstrs(n=n_make)
-
-    df = pd.DataFrame()
-    df[col_filename] = ids
-    df[col_img] = list(iter(imgs))
-    if pathlib.Path(datafile_str).is_file() and backup:
-        _backupfile(datafile_str, verbose=verbose)
-
-    # save
-    print("to_pickle:", datafile_str)
-    df.to_pickle(datafile_str)
-
-    return None
+        df = pd.DataFrame()
+        df[self.col_filename] = ids
+        df[self.col_img] = list(iter(imgs))
+        self._save(
+            df=df, filepath=filepath,
+            backup=backup, verbose=self.verbose)
+        return None
 
 
 def main(args=None) -> None:
@@ -259,17 +255,15 @@ def main(args=None) -> None:
     # WorkDir
     config["workdir"] = WorkDir(config["workdir"])
 
+    data = Data(config)
+
     if n_makesample is not None:
-        make_sample_datafile(n_make=n_makesample, **config)
+        data.save_samplefile(n=n_makesample)
         return None
 
     if is_deploy and is_register:
         raise Exception("Both '--deploy' and '--register' are active")
 
-    if config["verbose"]:
-        print(config)
-
-    data = Data(config)
     data.load()
 
     if is_deploy:
