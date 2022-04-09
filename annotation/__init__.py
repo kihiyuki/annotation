@@ -2,7 +2,6 @@ import sys
 import argparse
 import shutil
 from pathlib import Path
-from tabnanny import verbose
 from warnings import warn
 
 # import numpy as np
@@ -11,6 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from .lib import read_config
+
 
 __version__ = "0.1.1"
 
@@ -72,7 +72,7 @@ def deploy(
     df,
     datafile, workdir, n, n_example, col_filename, col_img, col_label,
     labels, label_null, random, imgext, vmin, vmax, verbose,
-    figsize=(5,5)
+    figsize=(5,5),
 ) -> None:
     def _saveimg(m, filepath) -> None:
         fig = plt.figure(figsize=figsize)
@@ -108,6 +108,7 @@ def deploy(
             print("_saveimgs:", label, len(_df))
         _saveimgs(df=_df, dirpath=(workdir / label))
     return None
+
 
 def register(
     df,
@@ -145,7 +146,7 @@ def register(
     _cleardir(dirpath=workdir, subdirnames=[], verbose=verbose)
 
 
-def main(args=None):
+def main(args=None) -> None:
     if args is None:
         args = sys.argv[1:]
 
@@ -221,3 +222,5 @@ def main(args=None):
 
     if is_register:
         register(df=df, **config)
+
+    return None
