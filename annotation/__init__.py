@@ -29,6 +29,7 @@ CONFIG = dict(
     vmin = 0.,
     vmax = 2.,
     # figsize = "5,5",
+    verbose = 0,
 )
 
 
@@ -45,34 +46,43 @@ class WorkDir(type(pathlib.Path())):
         return None
 
 
-def _backupfile(filepath, suffix="~", verbose=False) -> None:
+def _backupfile(filepath, suffix="~") -> None:
     filepath_str = str(filepath)
     filepath_str_back = filepath_str + suffix
     print("backup:", filepath_str_back)
     shutil.copyfile(filepath_str, filepath_str_back)
 
 
-def _print_count(df, col_label, label_null) -> None:
-    print("len(df):", len(df))
-    # if label_null is None:
-    #     print("annotated:", len(df) - df[col_label].isna().sum())
-    print("annotated:", (df[col_label]!=label_null).sum())
+class Data(object):
+    def __init__(self, config: dict) -> None:
+        for k in CONFIG.keys():
+            self.__setattr__(k, config[k])
+        return None
 
+    def load(self) -> None:
+        self.df = pd.read_pickle(self.datafile)
+        if self.col_label not in self.df.columns:
+            self.df[self.col_label] = self.label_null
+        else:
+            self.df[self.col_label] = self.df[self.col_label].astype(str)
+        if self.verbose:
+            self.info()
+        if len(self.df) != self.df[self.col_filename].nunique():
+            raise ValueError(f"Each value of '{self.col_filename}' must be unique")
 
-def _read_pickle(
-    datafile, workdir, n, n_example, col_filename, col_img, col_label,
-    labels, label_null, random, imgext, vmin, vmax, verbose,
-) -> pd.DataFrame:
-    df = pd.read_pickle(datafile)
-    if col_label not in df.columns:
-        df[col_label] = label_null
-    else:
-        df[col_label] = df[col_label].astype(str)
-    if verbose:
-        _print_count(df=df, col_label=col_label, label_null=label_null)
-    if len(df) != df[col_filename].nunique():
-        raise ValueError(f"Each value of '{col_filename}' must be unique")
-    return df
+        for label in self.df[self.col_label].unique():
+            if label == self.label_null:
+                pass
+            elif label not in self.labels:
+                print(f"Label '{label}' found")
+                self.labels.append(label)
+
+        return None
+
+    def info(self) -> None:
+        print("len(df):", len(self.df))
+        print("annotated:", (self.df[self.col_label]!=self.label_null).sum())
+        return None
 
 
 def deploy(
@@ -140,8 +150,8 @@ def register(
             df.loc[idxs, col_label] = label
 
     datafile_str = str(datafile)
-    if verbose:
-        _print_count(df=df, col_label=col_label, label_null=label_null)
+    # if verbose:
+    #     _print_count(df=df, col_label=col_label, label_null=label_null)
     if backup:
         _backupfile(datafile_str, verbose=verbose)
     if verbose:
@@ -210,7 +220,7 @@ def main(args=None) -> None:
     pargs = parser.parse_args(args=args)
     is_deploy = bool(pargs.deploy)
     is_register = bool(pargs.register)
-    config["verbose"] = bool(pargs.verbose)
+    config["verbose"] = bool(config["verbose"] + pargs.verbose)
     if pargs.file is not None:
         config["datafile"] = pargs.file
     if pargs.workdir is not None:
@@ -249,18 +259,13 @@ def main(args=None) -> None:
     if config["verbose"]:
         print(config)
 
-    df = _read_pickle(**config)
-    for label in df[config["col_label"]].unique():
-        if label == config["label_null"]:
-            pass
-        elif label not in config["labels"]:
-            print(f"Label '{label}' found")
-            config["labels"].append(label)
+    data = Data(config)
+    data.load()
 
     if is_deploy:
-        deploy(df=df, **config)
+        deploy(df=data.df, **config)
 
     if is_register:
-        register(df=df, **config)
+        register(df=data.df, **config)
 
     return None
