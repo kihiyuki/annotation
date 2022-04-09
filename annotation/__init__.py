@@ -1,7 +1,8 @@
 import sys
 import argparse
 import shutil
-from pathlib import Path
+import pathlib
+from tabnanny import verbose
 from warnings import warn
 
 import pandas as pd
@@ -11,7 +12,7 @@ import seaborn as sns
 from .lib import read_config, gen_randmaps, gen_randstrs
 
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 
 # NOTE: int or float or str
 CONFIG = dict(
@@ -29,146 +30,166 @@ CONFIG = dict(
     vmin = 0.,
     vmax = 2.,
     # figsize = "5,5",
+    verbose = 0,
 )
 
 
-def _cleardir(dirpath: Path, subdirnames: list, verbose=False) -> None:
-    dirpath_str = str(dirpath)
-    if verbose:
-        print("clear:", dirpath_str)
-    if dirpath.is_dir():
-        shutil.rmtree(dirpath_str)
-    dirpath.mkdir(exist_ok=False)
-    for subdirname in subdirnames:
-        (dirpath / subdirname).mkdir(exist_ok=False)
-    return None
-
-
-def _backupfile(filepath, suffix="~", verbose=False) -> None:
-    filepath_str = str(filepath)
-    filepath_str_back = filepath_str + suffix
-    print("backup:", filepath_str_back)
-    shutil.copyfile(filepath_str, filepath_str_back)
-
-
-def _print_count(df, col_label, label_null) -> None:
-    print("len(df):", len(df))
-    # if label_null is None:
-    #     print("annotated:", len(df) - df[col_label].isna().sum())
-    print("annotated:", (df[col_label]!=label_null).sum())
-
-
-def _read_pickle(
-    datafile, workdir, n, n_example, col_filename, col_img, col_label,
-    labels, label_null, random, imgext, vmin, vmax, verbose,
-) -> pd.DataFrame:
-    df = pd.read_pickle(datafile)
-    if col_label not in df.columns:
-        df[col_label] = label_null
-    else:
-        df[col_label] = df[col_label].astype(str)
-    if verbose:
-        _print_count(df=df, col_label=col_label, label_null=label_null)
-    if len(df) != df[col_filename].nunique():
-        raise ValueError(f"Each value of '{col_filename}' must be unique")
-    return df
-
-
-def deploy(
-    df,
-    datafile, workdir, n, n_example, col_filename, col_img, col_label,
-    labels, label_null, random, imgext, vmin, vmax, verbose,
-    figsize=(5,5),
-) -> None:
-    def _saveimg(m, filepath) -> None:
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(111)
-        sns.heatmap(
-            m,
-            vmin=vmin, vmax=vmax, cbar=False,
-            xticklabels=[], yticklabels=[], ax=ax)
-        plt.savefig(filepath)
-        plt.clf()
-        plt.close()
-
-    def _saveimgs(df, dirpath: Path) -> None:
-        for _, row in df.iterrows():
-            filename = str(row[col_filename]) + imgext
-            filepath = dirpath / filename
-            _saveimg(m=row[col_img], filepath=str(filepath))
-
-    _cleardir(dirpath=workdir, subdirnames=labels)
-    _df = df[df[col_label]==label_null]
-    if random:
-        _df = _df.sample(n=min(n,len(_df)))
-    else:
-        _df = _df.head(n)
-    if verbose:
-        print("_saveimgs: nolabel", len(_df))
-    _saveimgs(df=_df, dirpath=workdir)
-    # Examples
-    for label in labels:
-        _df = df[df[col_label]==label]
-        _df = _df.sample(n=min(n_example,len(_df)))
+class WorkDir(type(pathlib.Path())):
+    def clear(self, subdirnames: list, verbose=False) -> None:
+        pathstr = str(self)
         if verbose:
-            print("_saveimgs:", label, len(_df))
-        _saveimgs(df=_df, dirpath=(workdir / label))
-    return None
+            print("clear:", pathstr)
+        if self.is_dir():
+            shutil.rmtree(pathstr)
+        self.mkdir(exist_ok=False)
+        for subdirname in subdirnames:
+            (self / subdirname).mkdir(exist_ok=False)
+        return None
 
 
-def register(
-    df,
-    datafile, workdir, n, n_example, col_filename, col_img, col_label,
-    labels, label_null, random, imgext, vmin, vmax, verbose,
-    backup=False,
-) -> None:
-    for labeldir in workdir.iterdir():
-        if labeldir.is_dir():
-            label = labeldir.name
-            if label not in labels:
+class Data(object):
+    def __init__(self, config: dict) -> None:
+        for k in CONFIG.keys():
+            if k in config:
+                self.__setattr__(k, config[k])
+            else:
+                self.__setattr__(k, CONFIG[k])
+        if self.verbose:
+            print(config)
+        return None
+
+    def load(self) -> None:
+        self.df = pd.read_pickle(self.datafile)
+        if self.col_label not in self.df.columns:
+            self.df[self.col_label] = self.label_null
+        else:
+            self.df[self.col_label] = self.df[self.col_label].astype(str)
+        if self.verbose:
+            self.info()
+        if len(self.df) != self.df[self.col_filename].nunique():
+            raise ValueError(f"Each value of '{self.col_filename}' must be unique")
+
+        for label in self.df[self.col_label].unique():
+            if label == self.label_null:
+                pass
+            elif label not in self.labels:
                 print(f"Label '{label}' found")
-                labels.append(label)
+                self.labels.append(label)
 
-    for label in labels:
-        filepaths = (workdir / label).glob(f"*{imgext}")
-        for filepath in filepaths:
-            name = filepath.name.rstrip(imgext)
-            idxs = df[df[col_filename]==name].index
-            if verbose:
-                print("register:", label, name, idxs)
-            df.loc[idxs, col_label] = label
+        return None
 
-    datafile_str = str(datafile)
-    if verbose:
-        _print_count(df=df, col_label=col_label, label_null=label_null)
-    if backup:
-        _backupfile(datafile_str, verbose=verbose)
-    if verbose:
-        print("to_pickle:", datafile_str)
-    df.to_pickle(datafile_str)
-    _cleardir(dirpath=workdir, subdirnames=[], verbose=verbose)
+    def info(self) -> None:
+        print("len(df):", len(self.df))
+        print("annotated:", (self.df[self.col_label]!=self.label_null).sum())
+        return None
 
+    def get_labelled(
+        self,
+        label: str = None,
+        sample: bool = False,
+        head: int = False,
+        n: int = None,
+    ) -> pd.DataFrame:
+        df = self.df
+        if label is None:
+            _df = df[df[self.col_label]==self.label_null]
+        else:
+            _df =  df[df[self.col_label]==label]
 
-def make_sample_datafile(
-    datafile, workdir, n, n_example, col_filename, col_img, col_label,
-    labels, label_null, random, imgext, vmin, vmax, verbose,
-    n_make=1000, backup=False,
-) -> None:
-    datafile_str = "./sample.pkl.xz"
-    imgs = gen_randmaps(n=n_make)
-    ids = gen_randstrs(n=n_make)
+        if sample and head:
+            warn("Both 'sample' and 'head' are selected")
+        if n is None:
+            n = self.n
+        if sample:
+            _df = _df.sample(n=min(self.n,len(_df)))
+        if head:
+            _df = _df.head(n)
+        if self.verbose:
+            print("data.get_labelled({}): {}".format(
+                "nolabel" if label is None else label,
+                len(_df),
+            ))
 
-    df = pd.DataFrame()
-    df[col_filename] = ids
-    df[col_img] = list(iter(imgs))
-    if Path(datafile_str).is_file() and backup:
-        _backupfile(datafile_str, verbose=verbose)
+        return _df
 
-    # save
-    print("to_pickle:", datafile_str)
-    df.to_pickle(datafile_str)
+    def deploy(self, figsize=(5,5)) -> None:
+        def _saveimg(m, filepath) -> None:
+            fig = plt.figure(figsize=figsize)
+            ax = fig.add_subplot(111)
+            sns.heatmap(
+                m,
+                vmin=self.vmin, vmax=self.vmax, cbar=False,
+                xticklabels=[], yticklabels=[], ax=ax)
+            plt.savefig(filepath)
+            plt.clf()
+            plt.close()
 
-    return None
+        def _saveimgs(df, dirpath: pathlib.Path) -> None:
+            for _, row in df.iterrows():
+                filename = str(row[self.col_filename]) + self.imgext
+                filepath = dirpath / filename
+                _saveimg(m=row[self.col_img], filepath=str(filepath))
+
+        self.workdir.clear(subdirnames=self.labels)
+        _df = self.get_labelled(label=None, sample=self.random, head=not self.random)
+        _saveimgs(df=_df, dirpath=self.workdir)
+        # Examples
+        for label in self.labels:
+            _df = self.get_labelled(label=label, sample=True, n=self.n_example)
+            _saveimgs(df=_df, dirpath=(self.workdir / label))
+        return None
+
+    def register(self, save=True, backup=True) -> None:
+        for labeldir in self.workdir.iterdir():
+            if labeldir.is_dir():
+                label = labeldir.name
+                if label not in self.labels:
+                    print(f"Label '{label}' found")
+                    self.labels.append(label)
+        for label in self.labels:
+            filepaths = (self.workdir / label).glob(f"*{self.imgext}")
+            for filepath in filepaths:
+                name = filepath.name.rstrip(self.imgext)
+                idxs = self.df[self.df[self.col_filename]==name].index
+                if self.verbose:
+                    print("data.register: label={} id={} idx={}".format(
+                        label, name, list(idxs)))
+                self.df.loc[idxs, self.col_label] = label
+        if save:
+            self.save(backup=backup)
+        return None
+
+    @staticmethod
+    def _save(df, filepath, backup=True, backup_suffix="~", verbose=False) -> None:
+        if backup and pathlib.Path(filepath).is_file():
+            filepath_str = str(filepath)
+            filepath_str_back = filepath_str + backup_suffix
+            print("backup:", filepath_str_back)
+            shutil.copyfile(filepath_str, filepath_str_back)
+
+        if verbose:
+            print("data.save:", filepath)
+        df.to_pickle(filepath)
+
+    def save(self, backup=True) -> None:
+        self._save(
+            df=self.df, filepath=str(self.datafile),
+            backup=backup, verbose=self.verbose)
+        self.workdir.clear(subdirnames=[], verbose=self.verbose)
+        return None
+
+    def save_samplefile(
+        self, filepath="./sample.pkl.xz", n=1000, backup=True) -> None:
+        imgs = gen_randmaps(n=n)
+        ids = gen_randstrs(n=n)
+
+        df = pd.DataFrame()
+        df[self.col_filename] = ids
+        df[self.col_img] = list(iter(imgs))
+        self._save(
+            df=df, filepath=filepath,
+            backup=backup, verbose=self.verbose)
+        return None
 
 
 def main(args=None) -> None:
@@ -209,7 +230,7 @@ def main(args=None) -> None:
     pargs = parser.parse_args(args=args)
     is_deploy = bool(pargs.deploy)
     is_register = bool(pargs.register)
-    config["verbose"] = bool(pargs.verbose)
+    config["verbose"] = bool(config["verbose"] + pargs.verbose)
     if pargs.file is not None:
         config["datafile"] = pargs.file
     if pargs.workdir is not None:
@@ -229,35 +250,26 @@ def main(args=None) -> None:
         else:
             config[k] = config[k].split(",")
     # Path
-    for k in ["datafile", "workdir"]:
-        config[k] = Path(config[k]).resolve()
-    # None
-    # for k in ["label_null"]:
-    #     if config[k] == "None":
-    #         config[k] = None
+    for k in ["datafile"]:
+        config[k] = pathlib.Path(config[k]).resolve()
+    # WorkDir
+    config["workdir"] = WorkDir(config["workdir"])
+
+    data = Data(config)
 
     if n_makesample is not None:
-        make_sample_datafile(n_make=n_makesample, **config)
+        data.save_samplefile(n=n_makesample)
         return None
 
     if is_deploy and is_register:
         raise Exception("Both '--deploy' and '--register' are active")
 
-    if config["verbose"]:
-        print(config)
-
-    df = _read_pickle(**config)
-    for label in df[config["col_label"]].unique():
-        if label == config["label_null"]:
-            pass
-        elif label not in config["labels"]:
-            print(f"Label '{label}' found")
-            config["labels"].append(label)
+    data.load()
 
     if is_deploy:
-        deploy(df=df, **config)
+        data.deploy()
 
     if is_register:
-        register(df=df, **config)
+        data.register()
 
     return None
