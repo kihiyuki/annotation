@@ -73,25 +73,25 @@ python -m annotation --makesample 100
 ```ini
 [DEFAULT]
 datafile = ./data.pkl.xz
-; アノテーション作業ディレクトリ
+; Working directory
 workdir = ./work
-; 一度にアノテーションする枚数
+; Number of images to annotate at once
 n = 30
-; 各ラベルの見本枚数(上限)
+; Number of example images of each label
 n_example = 5
-; 画像ファイル名に使うカラム
+; Column name for image-file name
 col_filename = id
-; 画像データのカラム
+; Column name of image (numpy.ndarray)
 col_img = img
-; ラベルのカラム
+; Column name of label
 col_label = label
-; 初期ラベル一覧(カンマ区切り)
+; List of initial labels (comma-separated)
 labels = A,B,C,none
-; ラベルなし(未アノテーション)を表す文字列
+; String representing "not annotated yet"
 label_null = 
-; アノテーション対象をランダムに取得するか、index順か
+; 1=Select randomly, 0=order by index
 random = 1
-; 画像ファイル拡張子
+; Image file extension
 imgext = .png
 ; seaborn.heatmap.vmin
 vmin = 0.
