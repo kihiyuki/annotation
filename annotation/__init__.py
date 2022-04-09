@@ -87,7 +87,7 @@ def deploy(
 
     def _saveimgs(df, dirpath: Path) -> None:
         for _, row in df.iterrows():
-            filename = row[col_filename] + imgext
+            filename = str(row[col_filename]) + imgext
             filepath = dirpath / filename
             _saveimg(m=row[col_img], filepath=str(filepath))
 
@@ -190,7 +190,10 @@ def main(args=None):
         config[k] = bool(config[k])
     # list(separator=",")
     for k in ["labels"]:
-        config[k] = config[k].split(",")
+        if config[k] == "":
+            config[k] = list()
+        else:
+            config[k] = config[k].split(",")
     # Path
     for k in ["datafile", "workdir"]:
         config[k] = Path(config[k]).resolve()
