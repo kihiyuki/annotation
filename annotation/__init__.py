@@ -11,7 +11,7 @@ import seaborn as sns
 from .lib import read_config, gen_randmaps, gen_randstrs
 
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 
 # NOTE: int or float or str
 CONFIG = dict(
@@ -116,6 +116,33 @@ class Data(object):
 
         return _df
 
+    def deploy(self, figsize=(5,5)) -> None:
+        def _saveimg(m, filepath) -> None:
+            fig = plt.figure(figsize=figsize)
+            ax = fig.add_subplot(111)
+            sns.heatmap(
+                m,
+                vmin=self.vmin, vmax=self.vmax, cbar=False,
+                xticklabels=[], yticklabels=[], ax=ax)
+            plt.savefig(filepath)
+            plt.clf()
+            plt.close()
+
+        def _saveimgs(df, dirpath: pathlib.Path) -> None:
+            for _, row in df.iterrows():
+                filename = str(row[self.col_filename]) + self.imgext
+                filepath = dirpath / filename
+                _saveimg(m=row[self.col_img], filepath=str(filepath))
+
+        self.workdir.clear(subdirnames=self.labels)
+        _df = self.get_labelled(label=None, sample=self.random, head=not self.random)
+        _saveimgs(df=_df, dirpath=self.workdir)
+        # Examples
+        for label in self.labels:
+            _df = self.get_labelled(label=label, sample=True, n=self.n_example)
+            _saveimgs(df=_df, dirpath=(self.workdir / label))
+        return None
+
     def register(self, save=True, backup=True) -> None:
         for labeldir in self.workdir.iterdir():
             if labeldir.is_dir():
@@ -145,38 +172,6 @@ class Data(object):
         self.df.to_pickle(datafile_str)
         self.workdir.clear(subdirnames=[], verbose=self.verbose)
         return None
-
-def deploy(
-    data,
-    datafile, workdir, n, n_example, col_filename, col_img, col_label,
-    labels, label_null, random, imgext, vmin, vmax, verbose,
-    figsize=(5,5),
-) -> None:
-    def _saveimg(m, filepath) -> None:
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(111)
-        sns.heatmap(
-            m,
-            vmin=vmin, vmax=vmax, cbar=False,
-            xticklabels=[], yticklabels=[], ax=ax)
-        plt.savefig(filepath)
-        plt.clf()
-        plt.close()
-
-    def _saveimgs(df, dirpath: pathlib.Path) -> None:
-        for _, row in df.iterrows():
-            filename = str(row[col_filename]) + imgext
-            filepath = dirpath / filename
-            _saveimg(m=row[col_img], filepath=str(filepath))
-
-    workdir.clear(subdirnames=labels)
-    _df = data.get_labelled(label=None, sample=random, head=not random)
-    _saveimgs(df=_df, dirpath=workdir)
-    # Examples
-    for label in labels:
-        _df = data.get_labelled(label=label, sample=True, n=n_example)
-        _saveimgs(df=_df, dirpath=(workdir / label))
-    return None
 
 
 def make_sample_datafile(
@@ -278,7 +273,7 @@ def main(args=None) -> None:
     data.load()
 
     if is_deploy:
-        deploy(data=data, **config)
+        data.deploy()
 
     if is_register:
         data.register()
