@@ -1,7 +1,7 @@
 import sys
 import argparse
 import shutil
-from pathlib import Path
+import pathlib
 from warnings import warn
 
 import pandas as pd
@@ -32,16 +32,17 @@ CONFIG = dict(
 )
 
 
-def _cleardir(dirpath: Path, subdirnames: list, verbose=False) -> None:
-    dirpath_str = str(dirpath)
-    if verbose:
-        print("clear:", dirpath_str)
-    if dirpath.is_dir():
-        shutil.rmtree(dirpath_str)
-    dirpath.mkdir(exist_ok=False)
-    for subdirname in subdirnames:
-        (dirpath / subdirname).mkdir(exist_ok=False)
-    return None
+class WorkDir(type(pathlib.Path())):
+    def clear(self, subdirnames: list, verbose=False) -> None:
+        pathstr = str(self)
+        if verbose:
+            print("clear:", pathstr)
+        if self.is_dir():
+            shutil.rmtree(pathstr)
+        self.mkdir(exist_ok=False)
+        for subdirname in subdirnames:
+            (self / subdirname).mkdir(exist_ok=False)
+        return None
 
 
 def _backupfile(filepath, suffix="~", verbose=False) -> None:
@@ -91,13 +92,13 @@ def deploy(
         plt.clf()
         plt.close()
 
-    def _saveimgs(df, dirpath: Path) -> None:
+    def _saveimgs(df, dirpath: pathlib.Path) -> None:
         for _, row in df.iterrows():
             filename = str(row[col_filename]) + imgext
             filepath = dirpath / filename
             _saveimg(m=row[col_img], filepath=str(filepath))
 
-    _cleardir(dirpath=workdir, subdirnames=labels)
+    workdir.clear(subdirnames=labels)
     _df = df[df[col_label]==label_null]
     if random:
         _df = _df.sample(n=min(n,len(_df)))
@@ -146,7 +147,7 @@ def register(
     if verbose:
         print("to_pickle:", datafile_str)
     df.to_pickle(datafile_str)
-    _cleardir(dirpath=workdir, subdirnames=[], verbose=verbose)
+    workdir.clear(subdirnames=[], verbose=verbose)
 
 
 def make_sample_datafile(
@@ -161,7 +162,7 @@ def make_sample_datafile(
     df = pd.DataFrame()
     df[col_filename] = ids
     df[col_img] = list(iter(imgs))
-    if Path(datafile_str).is_file() and backup:
+    if pathlib.Path(datafile_str).is_file() and backup:
         _backupfile(datafile_str, verbose=verbose)
 
     # save
@@ -229,8 +230,10 @@ def main(args=None) -> None:
         else:
             config[k] = config[k].split(",")
     # Path
-    for k in ["datafile", "workdir"]:
-        config[k] = Path(config[k]).resolve()
+    for k in ["datafile"]:
+        config[k] = pathlib.Path(config[k]).resolve()
+    # WorkDir
+    config["workdir"] = WorkDir(config["workdir"])
     # None
     # for k in ["label_null"]:
     #     if config[k] == "None":
