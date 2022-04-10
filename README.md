@@ -78,7 +78,7 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
 python -m annotation --makesample 100
 ```
 
-## config.ini
+## [config.ini](config.ini)
 
 全ての項目を記載する必要はなく、
 変更したい項目のみでOK。
@@ -98,23 +98,25 @@ col_filename = id
 col_img = img
 ; Column name of label
 col_label = label
-; List of initial labels (comma-separated)
+; List of initial labels (comma-separated) *nullable
 labels = A,B,C,none
-; String representing "not annotated yet"
+; String representing "not annotated yet" *nullable
 label_null = 
 ; 1=Select randomly, 0=order by index
 random = 1
 ; Image file extension
 imgext = .png
-; seaborn.heatmap.vmin
+; matplotlib.cmap (you can use custom cmap name in cmap.py) *nullable
+cmap = 
+; seaborn.heatmap.vmin *nullable
 vmin = 0.
-; seaborn.heatmap.vmax
-vmax = 2.
+; seaborn.heatmap.vmax *nullable
+vmax = 1.
+; 1=print verbose messages
+verbose = 0
 ```
 
 ### WM-811Kで使う
-
-`config.ini`
 
 ```ini
 [DEFAULT]
@@ -124,12 +126,19 @@ col_img = waferMap
 col_label = failureType
 labels = 
 label_null = []
+cmap = coolwarm
+vmin =
+vmax =
 ```
 
 [kaggle - WM-811K wafer map](https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map)
 (License: CC0)
 
 ![](doc/fig/dir_wm811k.png)
+
+## [cmap.py](annotation/cmap.py)
+
+自作カラーマップを定義できます。
 
 ## LICENSE
 
