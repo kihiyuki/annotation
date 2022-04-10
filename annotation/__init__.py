@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 
-from .lib import read_config, gen_randmaps, gen_randstrs
+from . import lib
 from .cmap import custom_cmaps
 
 
@@ -188,8 +188,8 @@ class Data(object):
 
     def save_samplefile(
         self, filepath="./sample.pkl.xz", n=1000, backup=True) -> None:
-        imgs = gen_randmaps(n=n)
-        ids = gen_randstrs(n=n)
+        imgs = lib.rand.image(n=n)
+        ids = lib.rand.string(n=n)
 
         df = pd.DataFrame()
         df[self.col_filename] = ids
@@ -204,7 +204,7 @@ def main(args=None) -> None:
     if args is None:
         args = sys.argv[1:]
 
-    config = read_config(
+    config = lib.config.load(
         file="./config.ini",
         section="DEFAULT",
         notfound_ok=True,
