@@ -119,7 +119,7 @@ col_img = img
 ; Column name of label
 col_label = label
 ; List of initial labels (comma-separated) *nullable
-labels = A,B,C,none
+labels = none
 ; String representing "not annotated yet" *nullable
 label_null = 
 ; 1=Select randomly, 0=order by index
