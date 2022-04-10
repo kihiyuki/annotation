@@ -1,14 +1,18 @@
 # 簡易アノテーションツール
 
-1チャンネル2次元の画像(Numpy.ndarray)をアノテーションするツール。
+1チャンネル2次元の画像(numpy.ndarray)を含むデータセット
+(Pickleファイル、pandas.DataFrame。WM-811Kライク)を読み込み、
+アノテーションするためのツール。
+
 アノテーション作業自体はファイルマネージャ上で
-「画像ファイルをディレクトリに振り分ける」ことで行う。
+**画像ファイルをディレクトリに振り分ける**
+ことで行う。
 
 ![](doc/fig/dir.png)
 
 ## 機能
 
-- Deploy: 画像データが含まれるDataFrame(Pickleファイル)から
+- Deploy: 画像データが含まれるPickleファイル(DataFrame)をロードし、
   アノテーション作業ディレクトリを生成する。
 - Register: アノテーション(ディレクトリ振分け)した結果をDataFrameのラベル列に登録し、
   Pickleファイルに保存する。
@@ -45,24 +49,32 @@ optional arguments:
 ### 備考
 
 - ラベル列はstrに変換されます。
+- ラベル列が元のDataFrameに存在しなければ、作成します。
+- 1枚の画像に対し付与できるラベルは1つだけです。
 - 新規ディレクトリを作成すれば、それが新規ラベルになります。
-- デプロイと登録の度、
+- 空文字列をラベルとして使うことはできません。
+- 自作カラーマップを使用できます。 -> [cmap.py](#cmappy)
+- deploy/registerの度に、
   workdir (デフォルトでは `./work`) を
   `shutil.rmtree(workdir)` で空にします。
   workdirにはアノテーション作業用データ以外を置かないでください。
-- 空文字列をラベルとして使うことはできません。
 
 ## datafile
 
-Example
+- pandas.DataFrame
+- 必要なカラム
+  - ID(col_filename)列
+  - 画像(col_img)列
+  - ラベル(col_label)列 ※なければ作成されます。
+- 画像は2次元numpy.ndarray
+
+**Example:**
 
 ```python
 >>> import pandas as pd
->>> df = pd.read_pickle(datafile)
+>>> df = pd.read_pickle("./data.pkl.xz")
 >>> df.loc[0, col_img]
-```
 
-```
 array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
        [0.146365  , 0.37815561, 0.74161512, 0.65022729],
        [0.55001124, 0.64548976, 0.59598189, 0.15400786],
@@ -78,7 +90,9 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
 python -m annotation --makesample 100
 ```
 
-## [config.ini](config.ini)
+## config.ini
+
+[config.ini](config.ini)
 
 全ての項目を記載する必要はなく、
 変更したい項目のみでOK。
@@ -136,10 +150,16 @@ vmax =
 
 ![](doc/fig/dir_wm811k.png)
 
-## [cmap.py](annotation/cmap.py)
+## cmap.py
+
+[cmap.py](annotation/cmap.py)
 
 自作カラーマップを定義できます。
 
 ## LICENSE
 
 [LICENSE](LICENSE)
+
+## CHANGELOG
+
+[CHANGELOG.md](CHANGELOG.md)
