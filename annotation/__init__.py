@@ -13,7 +13,7 @@ from .lib import read_config, gen_randmaps, gen_randstrs
 from .cmap import custom_cmaps
 
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 # NOTE: int or float or str
 CONFIG = dict(
@@ -24,7 +24,7 @@ CONFIG = dict(
     col_filename = "id",
     col_img = "img",
     col_label = "label",
-    labels = "A,B,C,none",
+    labels = "none",
     label_null = "",
     random = 1,
     imgext = ".png",

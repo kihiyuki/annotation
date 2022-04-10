@@ -1,7 +1,7 @@
 # 簡易アノテーションツール
 
 1チャンネル2次元の画像(numpy.ndarray)を含むデータセット
-(Pickleファイル、pandas.DataFrame。WM-811Kライク)を読み込み、
+(WM-811KライクなPickleファイル)を読み込み、
 アノテーションするためのツール。
 
 アノテーション作業自体はファイルマネージャ上で
@@ -58,6 +58,8 @@ optional arguments:
   workdir (デフォルトでは `./work`) を
   `shutil.rmtree(workdir)` で空にします。
   workdirにはアノテーション作業用データ以外を置かないでください。
+- Register時、元のPickleファイルをバックアップとしてコピーして保存します。
+  (デフォルトでは `./data.pkl.xz~`)
 
 ## datafile
 
@@ -84,7 +86,7 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
 ### サンプルdatafile生成
 
 `sample.pkl.xz`
-を生成します。
+を生成できます。
 
 ```sh
 python -m annotation --makesample 100
@@ -92,10 +94,14 @@ python -m annotation --makesample 100
 
 ## config.ini
 
-[config.ini](config.ini)
+設定ファイル
 
-全ての項目を記載する必要はなく、
-変更したい項目のみでOK。
+- なくてもOKです。
+- デフォルトから変更不要の行は省略してOKです。
+- datafile, workdir は
+  [arguments](#arguments) でも指定できます。
+  両方指定した場合はargumentsの値が使われます。
+- セクションはDEFAULTしか使えません。
 
 ```ini
 [DEFAULT]
@@ -113,7 +119,7 @@ col_img = img
 ; Column name of label
 col_label = label
 ; List of initial labels (comma-separated) *nullable
-labels = A,B,C,none
+labels = none
 ; String representing "not annotated yet" *nullable
 label_null = 
 ; 1=Select randomly, 0=order by index
