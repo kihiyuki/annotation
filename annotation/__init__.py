@@ -30,7 +30,7 @@ CONFIG = dict(
     imgext = ".png",
     cmap = "",
     vmin = 0.,
-    vmax = 2.,
+    vmax = 1.,
     verbose = 0,
 )
 
@@ -208,7 +208,11 @@ def main(args=None) -> None:
     config_ = read_config(notfound_ok=True)
     for k, v in config_.items():
         if k in config:
-            config[k] = type(config[k])(v)
+            try:
+                # cast to original type (CONFIG[k])
+                config[k] = type(config[k])(v)
+            except ValueError:
+                config[k] = v
         else:
             warn(f"'{k}' is an invalid key")
 
@@ -258,7 +262,7 @@ def main(args=None) -> None:
         else:
             config[k] = config[k].split(",")
     # None
-    for k in ["cmap"]:
+    for k in ["cmap", "vmin", "vmax"]:
         if config[k] == "":
             config[k] = None
     # Path

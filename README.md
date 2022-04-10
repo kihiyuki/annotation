@@ -98,20 +98,22 @@ col_filename = id
 col_img = img
 ; Column name of label
 col_label = label
-; List of initial labels (comma-separated)
+; List of initial labels (comma-separated) *nullable
 labels = A,B,C,none
-; String representing "not annotated yet"
+; String representing "not annotated yet" *nullable
 label_null = 
 ; 1=Select randomly, 0=order by index
 random = 1
 ; Image file extension
 imgext = .png
-; matplotlib.cmap (you can use custom cmap name in cmap.py)
+; matplotlib.cmap (you can use custom cmap name in cmap.py) *nullable
 cmap = 
-; seaborn.heatmap.vmin
+; seaborn.heatmap.vmin *nullable
 vmin = 0.
-; seaborn.heatmap.vmax
-vmax = 2.
+; seaborn.heatmap.vmax *nullable
+vmax = 1.
+; 1=print verbose messages
+verbose = 0
 ```
 
 ### WM-811Kで使う
@@ -124,6 +126,9 @@ col_img = waferMap
 col_label = failureType
 labels = 
 label_null = []
+cmap = coolwarm
+vmin =
+vmax =
 ```
 
 [kaggle - WM-811K wafer map](https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map)
