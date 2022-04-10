@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 
-from .lib import read_config, gen_randmaps, gen_randstrs
+from . import lib
 from .cmap import custom_cmaps
 
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 # NOTE: int or float or str
 CONFIG = dict(
@@ -188,8 +188,8 @@ class Data(object):
 
     def save_samplefile(
         self, filepath="./sample.pkl.xz", n=1000, backup=True) -> None:
-        imgs = gen_randmaps(n=n)
-        ids = gen_randstrs(n=n)
+        imgs = lib.rand.image(n=n)
+        ids = lib.rand.string(n=n)
 
         df = pd.DataFrame()
         df[self.col_filename] = ids
@@ -204,17 +204,14 @@ def main(args=None) -> None:
     if args is None:
         args = sys.argv[1:]
 
-    config = CONFIG.copy()
-    config_ = read_config(notfound_ok=True)
-    for k, v in config_.items():
-        if k in config:
-            try:
-                # cast to original type (CONFIG[k])
-                config[k] = type(config[k])(v)
-            except ValueError:
-                config[k] = v
-        else:
-            warn(f"'{k}' is an invalid key")
+    config = lib.config.load(
+        file="./config.ini",
+        section="DEFAULT",
+        notfound_ok=True,
+        default=CONFIG,
+        cast=True,
+        strict_cast=False,
+        strict_key=True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
