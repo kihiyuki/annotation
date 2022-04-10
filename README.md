@@ -78,7 +78,7 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
 python -m annotation --makesample 100
 ```
 
-## config.ini
+## [config.ini](config.ini)
 
 全ての項目を記載する必要はなく、
 変更したい項目のみでOK。
@@ -106,6 +106,8 @@ label_null =
 random = 1
 ; Image file extension
 imgext = .png
+; matplotlib.cmap (you can use custom cmap name in cmap.py)
+cmap = 
 ; seaborn.heatmap.vmin
 vmin = 0.
 ; seaborn.heatmap.vmax
@@ -113,8 +115,6 @@ vmax = 2.
 ```
 
 ### WM-811Kで使う
-
-`config.ini`
 
 ```ini
 [DEFAULT]
@@ -130,6 +130,10 @@ label_null = []
 (License: CC0)
 
 ![](doc/fig/dir_wm811k.png)
+
+## [cmap.py](annotation/cmap.py)
+
+自作カラーマップを定義できます。
 
 ## LICENSE
 

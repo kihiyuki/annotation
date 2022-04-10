@@ -2,17 +2,18 @@ import sys
 import argparse
 import shutil
 import pathlib
-from tabnanny import verbose
 from warnings import warn
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 
 from .lib import read_config, gen_randmaps, gen_randstrs
+from .cmap import custom_cmaps
 
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 # NOTE: int or float or str
 CONFIG = dict(
@@ -27,9 +28,9 @@ CONFIG = dict(
     label_null = "",
     random = 1,
     imgext = ".png",
+    cmap = "",
     vmin = 0.,
     vmax = 2.,
-    # figsize = "5,5",
     verbose = 0,
 )
 
@@ -112,13 +113,20 @@ class Data(object):
 
         return _df
 
+    # TODO: customize figsize
     def deploy(self, figsize=(5,5)) -> None:
         def _saveimg(m, filepath) -> None:
+            if self.cmap in custom_cmaps.keys():
+                _cmap = LinearSegmentedColormap.from_list(
+                    **custom_cmaps[self.cmap])
+            else:
+                _cmap = self.cmap
             fig = plt.figure(figsize=figsize)
             ax = fig.add_subplot(111)
             sns.heatmap(
                 m,
-                vmin=self.vmin, vmax=self.vmax, cbar=False,
+                vmin=self.vmin, vmax=self.vmax,
+                cmap=_cmap, cbar=False,
                 xticklabels=[], yticklabels=[], ax=ax)
             plt.savefig(filepath)
             plt.clf()
@@ -249,6 +257,10 @@ def main(args=None) -> None:
             config[k] = list()
         else:
             config[k] = config[k].split(",")
+    # None
+    for k in ["cmap"]:
+        if config[k] == "":
+            config[k] = None
     # Path
     for k in ["datafile"]:
         config[k] = pathlib.Path(config[k]).resolve()
