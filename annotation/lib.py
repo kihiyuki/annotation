@@ -1,7 +1,8 @@
 import configparser
-from pathlib import Path
 import string
 import random
+from pathlib import Path
+from warnings import warn
 
 import numpy as np
 
@@ -11,20 +12,30 @@ def read_config(
     section: str = "DEFAULT",
     encoding: str = None,
     notfound_ok: bool = False,
+    default: dict = None,
+    cast: bool = False,
+    strict_cast: bool = False,
+    strict_key: bool = False,
 ) -> dict:
     """Read configuration file
 
     Args:
-        file (str, optional): Configuration file path
+        file (str or Path, optional): Configuration file path
         section (str, optional): Section
         encoding (str, optional): File encoding
         notfound_ok (bool, optional): If True, return empty dict.
+        default (dict, optional): Default values of config
+        cast (bool, optional): If True, cast to type of default value.
+        strict_cast (bool, optional): If False, cast as much as possible.
+        strict_key (bool, optional): If False, keys can be added, and warn.
 
     Returns:
         dict
 
     Raises:
-        FileNotFoundError: If `notfound_ok` is False and `file` not found
+        FileNotFoundError: If `notfound_ok` is False and `file` not found.
+        ValueError: If `strict_cast` is True and failed to cast.
+        KeyError: If `strict_key` is True and some keys of configfile is not in default.
     """
     filepath = Path(file)
     config = configparser.ConfigParser()
@@ -33,7 +44,31 @@ def read_config(
             config.read_file(f)
     elif not notfound_ok:
         raise FileNotFoundError(file)
-    return dict(config[section])
+
+    if default is None:
+        config_d = dict(config[section])
+    else:
+        config_d_f = dict(config[section])
+        config_d = default.copy()
+        for k, v in config_d_f.items():
+            if k in config_d:
+                if cast:
+                    try:
+                        # cast to type(default[k])
+                        config_d[k] = type(config_d[k])(v)
+                    except ValueError as e:
+                        if strict_cast:
+                            raise ValueError(e)
+                        else:
+                            config_d[k] = v
+                else:
+                    config_d[k] = v
+            elif strict_key:
+                raise KeyError(k)
+            else:
+                warn(f"Key '{k}' is not in default")
+
+    return config_d
 
 
 def gen_randmaps(n=100, shape=[4,4]) -> np.ndarray:
