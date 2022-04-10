@@ -8,7 +8,7 @@
 **画像ファイルをディレクトリに振り分ける**
 ことで行う。
 
-![](doc/fig/dir.png)
+![](doc/img/dir.png)
 
 ## 機能
 
@@ -148,7 +148,7 @@ vmax =
 [kaggle - WM-811K wafer map](https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map)
 (License: CC0)
 
-![](doc/fig/dir_wm811k.png)
+![](doc/img/dir_wm811k.png)
 
 ## cmap.py
 
