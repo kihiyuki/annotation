@@ -185,11 +185,13 @@ class Data(object):
         self.workdir.clear(subdirnames=[], verbose=self.verbose)
         return None
 
-    def save_samplefile(
-        self, filepath="./sample.pkl.xz", n=1000, backup=True) -> None:
+    def generate_samplefile(
+        self, filepath="./sample.pkl.xz", n=100, backup=True) -> None:
         imgs = lib.rand.image(n=n)
         ids = lib.rand.string(n=n)
 
+        print(f"generate_samplefile: {filepath}")
+        print(f"{n} images, col_filename={self.col_filename}, col_img={self.col_img}")
         df = pd.DataFrame()
         df[self.col_filename] = ids
         df[self.col_img] = list(iter(imgs))
@@ -231,9 +233,9 @@ def main(args=None) -> None:
         required=False, default=None,
         help="Working directory")
     parser.add_argument(
-        "--makesample",
-        required=False, default=None,
-        help="Make sample datafile (number)")
+        "--generate-samplefile",
+        action="count", default=0,
+        help="Generate sample datafile (sample.pkl.xz)")
 
     pargs = parser.parse_args(args=args)
     is_deploy = bool(pargs.deploy)
@@ -243,10 +245,7 @@ def main(args=None) -> None:
         config["datafile"] = pargs.file
     if pargs.workdir is not None:
         config["workdir"] = pargs.workdir
-    if pargs.makesample is not None:
-        n_makesample = int(pargs.makesample)
-    else:
-        n_makesample = None
+    is_generate_samplefile = bool(pargs.generate_samplefile)
 
     # bool
     for k in ["random"]:
@@ -269,8 +268,8 @@ def main(args=None) -> None:
 
     data = Data(config)
 
-    if n_makesample is not None:
-        data.save_samplefile(n=n_makesample)
+    if is_generate_samplefile:
+        data.generate_samplefile(n=50)
         return None
 
     if is_deploy and is_register:

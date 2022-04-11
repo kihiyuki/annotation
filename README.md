@@ -89,7 +89,7 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
 を生成できます。
 
 ```sh
-python -m annotation --makesample 100
+python -m annotation --generate-samplefile
 ```
 
 ## config.ini
