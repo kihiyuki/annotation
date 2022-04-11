@@ -13,7 +13,7 @@ from . import lib
 from .cmap import custom_cmaps
 
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 # NOTE: int or float or str
 CONFIG_DEFAULT = dict(
@@ -251,11 +251,11 @@ def main(args=None) -> None:
     parser.add_argument(
         "--file", "-f",
         required=False, default=None,
-        help="Datafile(Pickle)")
+        help="Pickled pandas.Dataframe file path")
     parser.add_argument(
         "--workdir", "-w",
         required=False, default=None,
-        help="Working directory")
+        help="Working directory path")
     parser.add_argument(
         "--deploy-result",
         action="count", default=0,
@@ -308,7 +308,7 @@ def main(args=None) -> None:
     data = Data(config)
 
     if is_generate_samplefile:
-        data.generate_samplefile(n=50)
+        data.generate_samplefile()
         return None
 
     if is_deploy and is_register:
