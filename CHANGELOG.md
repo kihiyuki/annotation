@@ -4,6 +4,7 @@
 
 - デプロイ枚数オプションの n, n_example をnullableに変更。nullのとき、全画像を出力。
 - オプション変更: `--makesample <N>` -> `--generate-samplefile`
+- オプション追加: `--deploy-result`
 
 ## v1.1
 

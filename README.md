@@ -31,7 +31,7 @@ python -m annotation -d
 python -m annotation -r
 ```
 
-### arguments
+### Optional arguments
 
 ```
 optional arguments:
@@ -42,8 +42,20 @@ optional arguments:
   --file FILE, -f FILE  Datafile(Pickle)
   --workdir WORKDIR, -w WORKDIR
                         Working directory
-  --makesample MAKESAMPLE
-                        Make sample datafile (number)
+  --deploy-result       Deploy all annotation result
+  --generate-samplefile
+                        Generate sample datafile (sample.pkl.xz)
+```
+
+```sh
+# 全てのアノテーション済み画像のみ出力します。
+python -m annotation --deploy-result
+```
+
+```sh
+# サンプルdatafile `sample.pkl.xz` を生成できます。
+# カラム設定は `config.ini` に従います。
+python -m annotation --generate-samplefile
 ```
 
 ### 備考
@@ -81,15 +93,6 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
        [0.146365  , 0.37815561, 0.74161512, 0.65022729],
        [0.55001124, 0.64548976, 0.59598189, 0.15400786],
        [0.88276608, 0.20265346, 0.52643172, 0.3005652 ]])
-```
-
-### サンプルdatafile生成
-
-`sample.pkl.xz`
-を生成できます。
-
-```sh
-python -m annotation --generate-samplefile
 ```
 
 ## config.ini

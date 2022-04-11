@@ -205,6 +205,7 @@ def main(args=None) -> None:
     if args is None:
         args = sys.argv[1:]
 
+    # Load configuration file
     config = lib.config.load(
         file="./config.ini",
         section="DEFAULT",
@@ -214,6 +215,7 @@ def main(args=None) -> None:
         strict_cast=False,
         strict_key=True)
 
+    # Parse optional arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--deploy", "-d",
@@ -233,6 +235,10 @@ def main(args=None) -> None:
         required=False, default=None,
         help="Working directory")
     parser.add_argument(
+        "--deploy-result",
+        action="count", default=0,
+        help="Deploy all annotation result")
+    parser.add_argument(
         "--generate-samplefile",
         action="count", default=0,
         help="Generate sample datafile (sample.pkl.xz)")
@@ -245,6 +251,7 @@ def main(args=None) -> None:
         config["datafile"] = pargs.file
     if pargs.workdir is not None:
         config["workdir"] = pargs.workdir
+    is_deploy_result = bool(pargs.deploy_result)
     is_generate_samplefile = bool(pargs.generate_samplefile)
 
     # bool
@@ -266,6 +273,13 @@ def main(args=None) -> None:
     # WorkDir
     config["workdir"] = WorkDir(config["workdir"])
 
+    if is_deploy_result:
+        # Deploy annotated images only
+        is_deploy = True
+        config["n"] = 0
+        config["n_example"] = None
+
+    # Initialize 'Data' class
     data = Data(config)
 
     if is_generate_samplefile:
@@ -275,6 +289,7 @@ def main(args=None) -> None:
     if is_deploy and is_register:
         raise Exception("Both '--deploy' and '--register' are active")
 
+    # Load pickle datafile
     data.load()
 
     if is_deploy:
