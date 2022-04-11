@@ -31,7 +31,7 @@ python -m annotation -d
 python -m annotation -r
 ```
 
-### arguments
+### Optional arguments
 
 ```
 optional arguments:
@@ -42,8 +42,20 @@ optional arguments:
   --file FILE, -f FILE  Datafile(Pickle)
   --workdir WORKDIR, -w WORKDIR
                         Working directory
-  --makesample MAKESAMPLE
-                        Make sample datafile (number)
+  --deploy-result       Deploy all annotation result
+  --generate-samplefile
+                        Generate sample datafile (sample.pkl.xz)
+```
+
+```sh
+# 全てのアノテーション済み画像のみ出力します。
+python -m annotation --deploy-result
+```
+
+```sh
+# サンプルdatafile `sample.pkl.xz` を生成できます。
+# カラム設定は `config.ini` に従います。
+python -m annotation --generate-samplefile
 ```
 
 ### 備考
@@ -60,6 +72,8 @@ optional arguments:
   workdirにはアノテーション作業用データ以外を置かないでください。
 - Register時、元のPickleファイルをバックアップとしてコピーして保存します。
   (デフォルトでは `./data.pkl.xz~`)
+- Pickleファイルを読んでPickleファイルに戻すので、
+  ファイルサイズが大きい場合は動作が遅くなります。
 
 ## datafile
 
@@ -83,56 +97,59 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
        [0.88276608, 0.20265346, 0.52643172, 0.3005652 ]])
 ```
 
-### サンプルdatafile生成
-
-`sample.pkl.xz`
-を生成できます。
-
-```sh
-python -m annotation --makesample 100
-```
-
 ## config.ini
 
 設定ファイル
 
-- なくてもOKです。
-- デフォルトから変更不要の行は省略してOKです。
+- 設定ファイルは、なくてもOKです。
+- デフォルト値から変更しない行は、省略してもOKです。
 - datafile, workdir は
   [arguments](#arguments) でも指定できます。
-  両方指定した場合はargumentsの値が使われます。
+  両方指定した場合は、argumentsの値が使われます。
 - セクションはDEFAULTしか使えません。
 
 ```ini
 [DEFAULT]
+; Pickled pandas.DataFrame file path
 datafile = ./data.pkl.xz
-; Working directory
+; Working directory path
 workdir = ./work
 ; Number of images to annotate at once
+; (nullable) If null, deploy all images.
 n = 30
 ; Number of example images of each label
+; (nullable) If null, deploy all images.
 n_example = 5
 ; Column name for image-file name
 col_filename = id
-; Column name of image (numpy.ndarray)
+; Column name of image (containing numpy.ndarray)
 col_img = img
 ; Column name of label
 col_label = label
-; List of initial labels (comma-separated) *nullable
+; List of initial labels (comma-separated)
+; (nullable) If null, no initial labels set.
 labels = none
-; String representing "not annotated yet" *nullable
+; String representing to be unannotated
+; (nullable) If null, "" represens to be unannotated.
 label_null = 
 ; 1=Select randomly, 0=order by index
 random = 1
 ; Image file extension
 imgext = .png
-; matplotlib.cmap (you can use custom cmap name in cmap.py) *nullable
+; matplotlib.cmap (you can use custom cmap name in cmap.py)
+; (nullable) If null, use default cmap of seaboarn.heatmap.
 cmap = 
-; seaborn.heatmap.vmin *nullable
-vmin = 0.
-; seaborn.heatmap.vmax *nullable
-vmax = 1.
-; 1=print verbose messages
+; seaborn.heatmap.vmin
+; (nullable) If null, determined automatically.
+vmin = 0.0
+; seaborn.heatmap.vmax
+; (nullable) If null, determined automatically.
+vmax = 1.0
+; matplotlib.pyplot.figure.figsize
+figsize = 4,4
+; 1=Copy datafile to datafile~ before save
+backup = 1
+; 1=Print verbose messages
 verbose = 0
 ```
 

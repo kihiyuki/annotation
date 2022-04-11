@@ -13,10 +13,10 @@ from . import lib
 from .cmap import custom_cmaps
 
 
-__version__ = "1.1.2"
+__version__ = "1.2.0"
 
 # NOTE: int or float or str
-CONFIG = dict(
+CONFIG_DEFAULT = dict(
     datafile = "./data.pkl.xz",
     workdir = "./work",
     n = 30,
@@ -29,8 +29,10 @@ CONFIG = dict(
     random = 1,
     imgext = ".png",
     cmap = "",
-    vmin = 0.,
-    vmax = 1.,
+    vmin = 0.0,
+    vmax = 1.0,
+    figsize = "4,4",
+    backup = 1,
     verbose = 0,
 )
 
@@ -50,11 +52,11 @@ class WorkDir(type(pathlib.Path())):
 
 class Data(object):
     def __init__(self, config=dict()) -> None:
-        for k in CONFIG.keys():
+        for k in CONFIG_DEFAULT.keys():
             if k in config:
                 self.__setattr__(k, config[k])
             else:
-                self.__setattr__(k, CONFIG[k])
+                self.__setattr__(k, CONFIG_DEFAULT[k])
         if self.verbose:
             print(config)
         return None
@@ -67,7 +69,14 @@ class Data(object):
             self.df[self.col_label] = self.df[self.col_label].astype(str)
         if self.verbose:
             self.info()
-        if len(self.df) != self.df[self.col_filename].nunique():
+
+        self._index_as_filename =  (self.col_filename == "index") and ("index" not in self.df.columns)
+        if self._index_as_filename:
+            print("Column 'index' is not found, use df.index instead")
+            nunique = self.df.index.nunique()
+        else:
+            nunique = self.df[self.col_filename].nunique()
+        if len(self.df) != nunique:
             raise ValueError(f"Each value of '{self.col_filename}' must be unique")
 
         for label in self.df[self.col_label].unique():
@@ -86,10 +95,10 @@ class Data(object):
 
     def get_labelled(
         self,
+        n: int,
         label: str = None,
         sample: bool = False,
         head: int = False,
-        n: int = None,
     ) -> pd.DataFrame:
         df = self.df
         if label is None:
@@ -99,12 +108,11 @@ class Data(object):
 
         if sample and head:
             warn("Both 'sample' and 'head' are selected")
-        if n is None:
-            n = self.n
-        if sample:
-            _df = _df.sample(n=min(n,len(_df)))
-        if head:
-            _df = _df.head(n)
+        if n is not None:
+            if sample:
+                _df = _df.sample(n=min(n,len(_df)))
+            if head:
+                _df = _df.head(n)
         if self.verbose:
             print("data.get_labelled({}): {}".format(
                 "nolabel" if label is None else label,
@@ -114,7 +122,10 @@ class Data(object):
         return _df
 
     # TODO: customize figsize
-    def deploy(self, figsize=(5,5)) -> None:
+    def deploy(self, figsize=None) -> None:
+        if figsize is None:
+            figsize = self.figsize
+
         def _saveimg(m, filepath) -> None:
             if self.cmap in custom_cmaps.keys():
                 _cmap = LinearSegmentedColormap.from_list(
@@ -124,30 +135,33 @@ class Data(object):
             fig = plt.figure(figsize=figsize)
             ax = fig.add_subplot(111)
             sns.heatmap(
-                m,
-                vmin=self.vmin, vmax=self.vmax,
-                cmap=_cmap, cbar=False,
-                xticklabels=[], yticklabels=[], ax=ax)
+                m, vmin=self.vmin, vmax=self.vmax, cmap=_cmap,
+                cbar=False, xticklabels=[], yticklabels=[], ax=ax)
             plt.savefig(filepath)
             plt.clf()
             plt.close()
 
         def _saveimgs(df, dirpath: pathlib.Path) -> None:
-            for _, row in df.iterrows():
-                filename = str(row[self.col_filename]) + self.imgext
+            for idx, row in df.iterrows():
+                if self._index_as_filename:
+                    filename = str(idx) + self.imgext
+                else:
+                    filename = str(row[self.col_filename]) + self.imgext
                 filepath = dirpath / filename
                 _saveimg(m=row[self.col_img], filepath=str(filepath))
 
         self.workdir.clear(subdirnames=self.labels)
-        _df = self.get_labelled(label=None, sample=self.random, head=not self.random)
+        _df = self.get_labelled(
+            label=None, sample=self.random, head=not self.random, n=self.n)
         _saveimgs(df=_df, dirpath=self.workdir)
         # Examples
         for label in self.labels:
-            _df = self.get_labelled(label=label, sample=True, n=self.n_example)
+            _df = self.get_labelled(
+                label=label, sample=True, n=self.n_example)
             _saveimgs(df=_df, dirpath=(self.workdir / label))
         return None
 
-    def register(self, save=True, backup=True) -> None:
+    def register(self, save=True, backup=None) -> None:
         for labeldir in self.workdir.iterdir():
             if labeldir.is_dir():
                 label = labeldir.name
@@ -158,7 +172,10 @@ class Data(object):
             filepaths = (self.workdir / label).glob(f"*{self.imgext}")
             for filepath in filepaths:
                 name = filepath.name.rstrip(self.imgext)
-                idxs = self.df[self.df[self.col_filename]==name].index
+                if self._index_as_filename:
+                    idxs = [int(name)]
+                else:
+                    idxs = self.df[self.df[self.col_filename]==name].index
                 if self.verbose:
                     print("data.register: label={} id={} idx={}".format(
                         label, name, list(idxs)))
@@ -179,18 +196,24 @@ class Data(object):
             print("data.save:", filepath)
         df.to_pickle(filepath)
 
-    def save(self, backup=True) -> None:
+    def save(self, backup=None) -> None:
+        if backup is None:
+            backup = self.backup
         self._save(
             df=self.df, filepath=str(self.datafile),
             backup=backup, verbose=self.verbose)
         self.workdir.clear(subdirnames=[], verbose=self.verbose)
         return None
 
-    def save_samplefile(
-        self, filepath="./sample.pkl.xz", n=1000, backup=True) -> None:
+    def generate_samplefile(
+        self, filepath="./sample.pkl.xz", n=100, backup=None) -> None:
+        if backup is None:
+            backup = self.backup
         imgs = lib.rand.image(n=n)
         ids = lib.rand.string(n=n)
 
+        print(f"generate_samplefile: {filepath}")
+        print(f"({n} images, col_filename={self.col_filename}, col_img={self.col_img})")
         df = pd.DataFrame()
         df[self.col_filename] = ids
         df[self.col_img] = list(iter(imgs))
@@ -204,15 +227,17 @@ def main(args=None) -> None:
     if args is None:
         args = sys.argv[1:]
 
+    # Load configuration file
     config = lib.config.load(
         file="./config.ini",
         section="DEFAULT",
         notfound_ok=True,
-        default=CONFIG,
+        default=CONFIG_DEFAULT,
         cast=True,
         strict_cast=False,
         strict_key=True)
 
+    # Parse optional arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--deploy", "-d",
@@ -232,9 +257,13 @@ def main(args=None) -> None:
         required=False, default=None,
         help="Working directory")
     parser.add_argument(
-        "--makesample",
-        required=False, default=None,
-        help="Make sample datafile (number)")
+        "--deploy-result",
+        action="count", default=0,
+        help="Deploy all annotation result")
+    parser.add_argument(
+        "--generate-samplefile",
+        action="count", default=0,
+        help="Generate sample datafile (sample.pkl.xz)")
 
     pargs = parser.parse_args(args=args)
     is_deploy = bool(pargs.deploy)
@@ -244,22 +273,23 @@ def main(args=None) -> None:
         config["datafile"] = pargs.file
     if pargs.workdir is not None:
         config["workdir"] = pargs.workdir
-    if pargs.makesample is not None:
-        n_makesample = int(pargs.makesample)
-    else:
-        n_makesample = None
+    is_deploy_result = bool(pargs.deploy_result)
+    is_generate_samplefile = bool(pargs.generate_samplefile)
 
     # bool
-    for k in ["random"]:
+    for k in ["random", "backup"]:
         config[k] = bool(config[k])
     # list(separator=",")
-    for k in ["labels"]:
+    for k in ["labels", "figsize"]:
         if config[k] == "":
             config[k] = list()
         else:
             config[k] = config[k].split(",")
+    # list[float]
+    for k in ["figsize"]:
+        config[k] = [float(x) for x in config[k]]
     # None
-    for k in ["cmap", "vmin", "vmax"]:
+    for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
         if config[k] == "":
             config[k] = None
     # Path
@@ -268,15 +298,23 @@ def main(args=None) -> None:
     # WorkDir
     config["workdir"] = WorkDir(config["workdir"])
 
+    if is_deploy_result:
+        # Deploy annotated images only
+        is_deploy = True
+        config["n"] = 0
+        config["n_example"] = None
+
+    # Initialize 'Data' class
     data = Data(config)
 
-    if n_makesample is not None:
-        data.save_samplefile(n=n_makesample)
+    if is_generate_samplefile:
+        data.generate_samplefile(n=50)
         return None
 
     if is_deploy and is_register:
         raise Exception("Both '--deploy' and '--register' are active")
 
+    # Load pickle datafile
     data.load()
 
     if is_deploy:
