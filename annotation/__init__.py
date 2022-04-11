@@ -31,6 +31,7 @@ CONFIG_DEFAULT = dict(
     cmap = "",
     vmin = 0.0,
     vmax = 1.0,
+    figsize = "4,4",
     backup = 1,
     verbose = 0,
 )
@@ -114,7 +115,10 @@ class Data(object):
         return _df
 
     # TODO: customize figsize
-    def deploy(self, figsize=(5,5)) -> None:
+    def deploy(self, figsize=None) -> None:
+        if figsize is None:
+            figsize = self.figsize
+
         def _saveimg(m, filepath) -> None:
             if self.cmap in custom_cmaps.keys():
                 _cmap = LinearSegmentedColormap.from_list(
@@ -263,11 +267,14 @@ def main(args=None) -> None:
     for k in ["random", "backup"]:
         config[k] = bool(config[k])
     # list(separator=",")
-    for k in ["labels"]:
+    for k in ["labels", "figsize"]:
         if config[k] == "":
             config[k] = list()
         else:
             config[k] = config[k].split(",")
+    # list[float]
+    for k in ["figsize"]:
+        config[k] = [float(x) for x in config[k]]
     # None
     for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
         if config[k] == "":

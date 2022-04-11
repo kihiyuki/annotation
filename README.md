@@ -72,6 +72,8 @@ python -m annotation --generate-samplefile
   workdirにはアノテーション作業用データ以外を置かないでください。
 - Register時、元のPickleファイルをバックアップとしてコピーして保存します。
   (デフォルトでは `./data.pkl.xz~`)
+- Pickleファイルを読んでPickleファイルに戻すので、
+  ファイルサイズが大きい場合は動作が遅くなります。
 
 ## datafile
 
@@ -99,17 +101,18 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
 
 設定ファイル
 
-- なくてもOKです。
-- デフォルトから変更不要の行は省略してOKです。
+- 設定ファイルは、なくてもOKです。
+- デフォルト値から変更しない行は、省略してもOKです。
 - datafile, workdir は
   [arguments](#arguments) でも指定できます。
-  両方指定した場合はargumentsの値が使われます。
+  両方指定した場合は、argumentsの値が使われます。
 - セクションはDEFAULTしか使えません。
 
 ```ini
 [DEFAULT]
+; Pickled pandas.DataFrame file path
 datafile = ./data.pkl.xz
-; Working directory
+; Working directory path
 workdir = ./work
 ; Number of images to annotate at once
 ; (nullable) If null, deploy all images.
@@ -127,7 +130,6 @@ col_label = label
 ; (nullable) If null, no initial labels set.
 labels = none
 ; String representing to be unannotated
-"not annotated yet"
 ; (nullable) If null, "" represens to be unannotated.
 label_null = 
 ; 1=Select randomly, 0=order by index
@@ -143,6 +145,8 @@ vmin = 0.0
 ; seaborn.heatmap.vmax
 ; (nullable) If null, determined automatically.
 vmax = 1.0
+; matplotlib.pyplot.figure.figsize
+figsize = 4,4
 ; 1=Copy datafile to datafile~ before save
 backup = 1
 ; 1=Print verbose messages

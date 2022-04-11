@@ -5,7 +5,7 @@
 - デプロイ枚数オプションの n, n_example をnullableに変更。nullのとき、全画像を出力。
 - コマンドラインオプション変更: `--makesample <N>` -> `--generate-samplefile`
 - コマンドラインオプション追加: `--deploy-result`
-- 設定値追加: backup
+- 設定値追加: figsize, backup
 
 ## v1.1
 
