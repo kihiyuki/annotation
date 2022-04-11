@@ -143,7 +143,9 @@ vmin = 0.0
 ; seaborn.heatmap.vmax
 ; (nullable) If null, determined automatically.
 vmax = 1.0
-; 1=print verbose messages
+; 1=Copy datafile to datafile~ before save
+backup = 1
+; 1=Print verbose messages
 verbose = 0
 ```
 

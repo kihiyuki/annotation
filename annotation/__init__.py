@@ -31,6 +31,7 @@ CONFIG_DEFAULT = dict(
     cmap = "",
     vmin = 0.0,
     vmax = 1.0,
+    backup = 1,
     verbose = 0,
 )
 
@@ -146,7 +147,7 @@ class Data(object):
             _saveimgs(df=_df, dirpath=(self.workdir / label))
         return None
 
-    def register(self, save=True, backup=True) -> None:
+    def register(self, save=True, backup=None) -> None:
         for labeldir in self.workdir.iterdir():
             if labeldir.is_dir():
                 label = labeldir.name
@@ -178,7 +179,9 @@ class Data(object):
             print("data.save:", filepath)
         df.to_pickle(filepath)
 
-    def save(self, backup=True) -> None:
+    def save(self, backup=None) -> None:
+        if backup is None:
+            backup = self.backup
         self._save(
             df=self.df, filepath=str(self.datafile),
             backup=backup, verbose=self.verbose)
@@ -186,7 +189,9 @@ class Data(object):
         return None
 
     def generate_samplefile(
-        self, filepath="./sample.pkl.xz", n=100, backup=True) -> None:
+        self, filepath="./sample.pkl.xz", n=100, backup=None) -> None:
+        if backup is None:
+            backup = self.backup
         imgs = lib.rand.image(n=n)
         ids = lib.rand.string(n=n)
 
@@ -255,7 +260,7 @@ def main(args=None) -> None:
     is_generate_samplefile = bool(pargs.generate_samplefile)
 
     # bool
-    for k in ["random"]:
+    for k in ["random", "backup"]:
         config[k] = bool(config[k])
     # list(separator=",")
     for k in ["labels"]:
