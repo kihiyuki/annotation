@@ -69,7 +69,14 @@ class Data(object):
             self.df[self.col_label] = self.df[self.col_label].astype(str)
         if self.verbose:
             self.info()
-        if len(self.df) != self.df[self.col_filename].nunique():
+
+        self._index_as_filename =  (self.col_filename == "index") and ("index" not in self.df.columns)
+        if self._index_as_filename:
+            print("Column 'index' is not found, use df.index instead")
+            nunique = self.df.index.nunique()
+        else:
+            nunique = self.df[self.col_filename].nunique()
+        if len(self.df) != nunique:
             raise ValueError(f"Each value of '{self.col_filename}' must be unique")
 
         for label in self.df[self.col_label].unique():
@@ -135,8 +142,11 @@ class Data(object):
             plt.close()
 
         def _saveimgs(df, dirpath: pathlib.Path) -> None:
-            for _, row in df.iterrows():
-                filename = str(row[self.col_filename]) + self.imgext
+            for idx, row in df.iterrows():
+                if self._index_as_filename:
+                    filename = str(idx) + self.imgext
+                else:
+                    filename = str(row[self.col_filename]) + self.imgext
                 filepath = dirpath / filename
                 _saveimg(m=row[self.col_img], filepath=str(filepath))
 
@@ -162,7 +172,10 @@ class Data(object):
             filepaths = (self.workdir / label).glob(f"*{self.imgext}")
             for filepath in filepaths:
                 name = filepath.name.rstrip(self.imgext)
-                idxs = self.df[self.df[self.col_filename]==name].index
+                if self._index_as_filename:
+                    idxs = [int(name)]
+                else:
+                    idxs = self.df[self.df[self.col_filename]==name].index
                 if self.verbose:
                     print("data.register: label={} id={} idx={}".format(
                         label, name, list(idxs)))
@@ -200,7 +213,7 @@ class Data(object):
         ids = lib.rand.string(n=n)
 
         print(f"generate_samplefile: {filepath}")
-        print(f"{n} images, col_filename={self.col_filename}, col_img={self.col_img}")
+        print(f"({n} images, col_filename={self.col_filename}, col_img={self.col_img})")
         df = pd.DataFrame()
         df[self.col_filename] = ids
         df[self.col_img] = list(iter(imgs))

@@ -6,6 +6,7 @@
 - コマンドラインオプション変更: `--makesample <N>` -> `--generate-samplefile`
 - コマンドラインオプション追加: `--deploy-result`
 - 設定値追加: figsize, backup
+- col_filename に 'index' を指定し 'index' カラムがなかった場合、DataFrame.indexを使うよう変更。
 
 ## v1.1
 
