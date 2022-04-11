@@ -13,10 +13,10 @@ from . import lib
 from .cmap import custom_cmaps
 
 
-__version__ = "1.1.2"
+__version__ = "1.2.0"
 
 # NOTE: int or float or str
-CONFIG = dict(
+CONFIG_DEFAULT = dict(
     datafile = "./data.pkl.xz",
     workdir = "./work",
     n = 30,
@@ -29,8 +29,8 @@ CONFIG = dict(
     random = 1,
     imgext = ".png",
     cmap = "",
-    vmin = 0.,
-    vmax = 1.,
+    vmin = 0.0,
+    vmax = 1.0,
     verbose = 0,
 )
 
@@ -50,11 +50,11 @@ class WorkDir(type(pathlib.Path())):
 
 class Data(object):
     def __init__(self, config=dict()) -> None:
-        for k in CONFIG.keys():
+        for k in CONFIG_DEFAULT.keys():
             if k in config:
                 self.__setattr__(k, config[k])
             else:
-                self.__setattr__(k, CONFIG[k])
+                self.__setattr__(k, CONFIG_DEFAULT[k])
         if self.verbose:
             print(config)
         return None
@@ -86,10 +86,10 @@ class Data(object):
 
     def get_labelled(
         self,
+        n: int,
         label: str = None,
         sample: bool = False,
         head: int = False,
-        n: int = None,
     ) -> pd.DataFrame:
         df = self.df
         if label is None:
@@ -99,12 +99,11 @@ class Data(object):
 
         if sample and head:
             warn("Both 'sample' and 'head' are selected")
-        if n is None:
-            n = self.n
-        if sample:
-            _df = _df.sample(n=min(n,len(_df)))
-        if head:
-            _df = _df.head(n)
+        if n is not None:
+            if sample:
+                _df = _df.sample(n=min(n,len(_df)))
+            if head:
+                _df = _df.head(n)
         if self.verbose:
             print("data.get_labelled({}): {}".format(
                 "nolabel" if label is None else label,
@@ -124,10 +123,8 @@ class Data(object):
             fig = plt.figure(figsize=figsize)
             ax = fig.add_subplot(111)
             sns.heatmap(
-                m,
-                vmin=self.vmin, vmax=self.vmax,
-                cmap=_cmap, cbar=False,
-                xticklabels=[], yticklabels=[], ax=ax)
+                m, vmin=self.vmin, vmax=self.vmax, cmap=_cmap,
+                cbar=False, xticklabels=[], yticklabels=[], ax=ax)
             plt.savefig(filepath)
             plt.clf()
             plt.close()
@@ -139,11 +136,13 @@ class Data(object):
                 _saveimg(m=row[self.col_img], filepath=str(filepath))
 
         self.workdir.clear(subdirnames=self.labels)
-        _df = self.get_labelled(label=None, sample=self.random, head=not self.random)
+        _df = self.get_labelled(
+            label=None, sample=self.random, head=not self.random, n=self.n)
         _saveimgs(df=_df, dirpath=self.workdir)
         # Examples
         for label in self.labels:
-            _df = self.get_labelled(label=label, sample=True, n=self.n_example)
+            _df = self.get_labelled(
+                label=label, sample=True, n=self.n_example)
             _saveimgs(df=_df, dirpath=(self.workdir / label))
         return None
 
@@ -208,7 +207,7 @@ def main(args=None) -> None:
         file="./config.ini",
         section="DEFAULT",
         notfound_ok=True,
-        default=CONFIG,
+        default=CONFIG_DEFAULT,
         cast=True,
         strict_cast=False,
         strict_key=True)
@@ -259,7 +258,7 @@ def main(args=None) -> None:
         else:
             config[k] = config[k].split(",")
     # None
-    for k in ["cmap", "vmin", "vmax"]:
+    for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
         if config[k] == "":
             config[k] = None
     # Path

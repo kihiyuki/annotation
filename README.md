@@ -109,29 +109,37 @@ datafile = ./data.pkl.xz
 ; Working directory
 workdir = ./work
 ; Number of images to annotate at once
+; (nullable) If null, deploy all images.
 n = 30
 ; Number of example images of each label
+; (nullable) If null, deploy all images.
 n_example = 5
 ; Column name for image-file name
 col_filename = id
-; Column name of image (numpy.ndarray)
+; Column name of image (containing numpy.ndarray)
 col_img = img
 ; Column name of label
 col_label = label
-; List of initial labels (comma-separated) *nullable
+; List of initial labels (comma-separated)
+; (nullable) If null, no initial labels set.
 labels = none
-; String representing "not annotated yet" *nullable
+; String representing to be unannotated
+"not annotated yet"
+; (nullable) If null, "" represens to be unannotated.
 label_null = 
 ; 1=Select randomly, 0=order by index
 random = 1
 ; Image file extension
 imgext = .png
-; matplotlib.cmap (you can use custom cmap name in cmap.py) *nullable
+; matplotlib.cmap (you can use custom cmap name in cmap.py)
+; (nullable) If null, use default cmap of seaboarn.heatmap.
 cmap = 
-; seaborn.heatmap.vmin *nullable
-vmin = 0.
-; seaborn.heatmap.vmax *nullable
-vmax = 1.
+; seaborn.heatmap.vmin
+; (nullable) If null, determined automatically.
+vmin = 0.0
+; seaborn.heatmap.vmax
+; (nullable) If null, determined automatically.
+vmax = 1.0
 ; 1=print verbose messages
 verbose = 0
 ```
