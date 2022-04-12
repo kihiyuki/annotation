@@ -13,7 +13,7 @@ from . import lib
 from .cmap import custom_cmaps
 
 
-__version__ = "1.2.1"
+__version__ = "1.3.0"
 
 # NOTE: int or float or str
 CONFIG_DEFAULT = dict(
@@ -228,16 +228,6 @@ def main(args=None) -> None:
     if args is None:
         args = sys.argv[1:]
 
-    # Load configuration file
-    config = lib.config.load(
-        file="./config.ini",
-        section="DEFAULT",
-        notfound_ok=True,
-        default=CONFIG_DEFAULT,
-        cast=True,
-        strict_cast=False,
-        strict_key=True)
-
     # Parse optional arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -258,6 +248,14 @@ def main(args=None) -> None:
         required=False, default=None,
         help="Working directory path")
     parser.add_argument(
+        "--config-file",
+        required=False, default="./config.ini",
+        help="Configuration file path")
+    parser.add_argument(
+        "--config-section",
+        required=False, default="DEFAULT",
+        help="Configuration section name")
+    parser.add_argument(
         "--deploy-result",
         action="count", default=0,
         help="Deploy results (all annotated images)")
@@ -267,6 +265,17 @@ def main(args=None) -> None:
         help="Generate sample datafile (sample.pkl.xz)")
 
     pargs = parser.parse_args(args=args)
+
+    # Load configuration file
+    config = lib.config.load(
+        file=pargs.config_file,
+        section=pargs.config_section,
+        notfound_ok=True,
+        default=CONFIG_DEFAULT,
+        cast=True,
+        strict_cast=False,
+        strict_key=True)
+
     is_deploy = bool(pargs.deploy)
     is_register = bool(pargs.register)
     config["verbose"] = bool(config["verbose"] + pargs.verbose)
