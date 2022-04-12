@@ -13,7 +13,7 @@ from . import lib
 from .cmap import custom_cmaps
 
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 # NOTE: int or float or str
 CONFIG_DEFAULT = dict(
@@ -51,12 +51,12 @@ class WorkDir(type(pathlib.Path())):
 
 
 class Data(object):
-    def __init__(self, config=dict()) -> None:
-        for k in CONFIG_DEFAULT.keys():
+    def __init__(self, config=dict(), default=CONFIG_DEFAULT) -> None:
+        for k in default.keys():
             if k in config:
                 self.__setattr__(k, config[k])
             else:
-                self.__setattr__(k, CONFIG_DEFAULT[k])
+                self.__setattr__(k, default[k])
         if self.verbose:
             print(config)
         return None
@@ -206,7 +206,8 @@ class Data(object):
         return None
 
     def generate_samplefile(
-        self, filepath="./sample.pkl.xz", n=100, backup=None) -> None:
+        self, filename="sample.pkl.xz", n=100, backup=None) -> None:
+        filepath = self.datafile.parent / filename
         if backup is None:
             backup = self.backup
         imgs = lib.rand.image(n=n)
@@ -251,15 +252,15 @@ def main(args=None) -> None:
     parser.add_argument(
         "--file", "-f",
         required=False, default=None,
-        help="Datafile(Pickle)")
+        help="Pickled pandas.Dataframe file path")
     parser.add_argument(
         "--workdir", "-w",
         required=False, default=None,
-        help="Working directory")
+        help="Working directory path")
     parser.add_argument(
         "--deploy-result",
         action="count", default=0,
-        help="Deploy all annotation result")
+        help="Deploy results (all annotated images)")
     parser.add_argument(
         "--generate-samplefile",
         action="count", default=0,
@@ -308,7 +309,7 @@ def main(args=None) -> None:
     data = Data(config)
 
     if is_generate_samplefile:
-        data.generate_samplefile(n=50)
+        data.generate_samplefile()
         return None
 
     if is_deploy and is_register:
