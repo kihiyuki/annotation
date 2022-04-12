@@ -76,7 +76,7 @@ class config(object):
         return config_d
 
 
-class rand(object):
+class random(object):
     def __init__(self) -> None:
         pass
 
