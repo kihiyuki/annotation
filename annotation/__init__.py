@@ -259,7 +259,7 @@ def main(args=None) -> None:
     parser.add_argument(
         "--deploy-result",
         action="count", default=0,
-        help="Deploy all annotation result")
+        help="Deploy results (all annotated images)")
     parser.add_argument(
         "--generate-samplefile",
         action="count", default=0,

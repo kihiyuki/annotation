@@ -10,7 +10,7 @@
 
 ![](doc/img/dir.png)
 
-## 機能
+## 動作
 
 - Deploy: 画像データが含まれるPickleファイル(DataFrame)をロードし、
   アノテーション作業ディレクトリを生成する。
@@ -42,19 +42,19 @@ optional arguments:
   --file FILE, -f FILE  Datafile(Pickle)
   --workdir WORKDIR, -w WORKDIR
                         Working directory
-  --deploy-result       Deploy all annotation result
+  --deploy-result       Deploy results (all annotated images)
   --generate-samplefile
                         Generate sample datafile (sample.pkl.xz)
 ```
 
 ```sh
-# 全てのアノテーション済み画像のみ出力します。
+# 全てのアノテーション済み画像のみ出力する
 python -m annotation --deploy-result
 ```
 
 ```sh
-# サンプルdatafile `sample.pkl.xz` を生成できます。
-# カラム設定は `config.ini` に従います。
+# サンプルdatafile sample.pkl.xz を生成する
+# (カラム設定は config.ini に従う)
 python -m annotation --generate-samplefile
 ```
 
