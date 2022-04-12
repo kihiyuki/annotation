@@ -51,12 +51,12 @@ class WorkDir(type(pathlib.Path())):
 
 
 class Data(object):
-    def __init__(self, config=dict()) -> None:
-        for k in CONFIG_DEFAULT.keys():
+    def __init__(self, config=dict(), default=CONFIG_DEFAULT) -> None:
+        for k in default.keys():
             if k in config:
                 self.__setattr__(k, config[k])
             else:
-                self.__setattr__(k, CONFIG_DEFAULT[k])
+                self.__setattr__(k, default[k])
         if self.verbose:
             print(config)
         return None
@@ -206,7 +206,8 @@ class Data(object):
         return None
 
     def generate_samplefile(
-        self, filepath="./sample.pkl.xz", n=100, backup=None) -> None:
+        self, filename="sample.pkl.xz", n=100, backup=None) -> None:
+        filepath = self.datafile.parent / filename
         if backup is None:
             backup = self.backup
         imgs = lib.rand.image(n=n)
