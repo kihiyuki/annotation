@@ -5,6 +5,7 @@ from .data import Data, CONFIG_DEFAULT
 
 __version__ = "1.3.0"
 
+
 class Arguments(ArgumentParser):
     def __init__(self) -> None:
         super().__init__()
@@ -41,14 +42,19 @@ class Arguments(ArgumentParser):
             "--generate-samplefile",
             action="count", default=0,
             help="Generate sample datafile (sample.pkl.xz)")
+        return None
 
     def parse_args(self, args=None, namespace=None):
-        args = super().parse_args(args=args, namespace=namespace)
-        args.deploy = bool(args.deploy)
-        args.register = bool(args.register)
-        args.deploy_result = bool(args.deploy_result)
-        args.generate_samplefile = bool(args.generate_samplefile)
-        return args
+        pargs = super().parse_args(args=args, namespace=namespace)
+        # deploy if deploy-result
+        pargs.deploy += pargs.deploy_result
+        # cast to bool
+        pargs.deploy = bool(pargs.deploy)
+        pargs.register = bool(pargs.register)
+        pargs.deploy_result = bool(pargs.deploy_result)
+        pargs.generate_samplefile = bool(pargs.generate_samplefile)
+        return pargs
+
 
 def main(args=None) -> None:
     # Parse optional arguments
@@ -89,7 +95,6 @@ def main(args=None) -> None:
 
     if args.deploy_result:
         # Deploy annotated images only
-        args.deploy = True
         config["n"] = 0
         config["n_example"] = None
 
