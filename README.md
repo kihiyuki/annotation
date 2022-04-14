@@ -39,12 +39,17 @@ optional arguments:
   --deploy, -d
   --register, -r
   --verbose, -v
-  --file FILE, -f FILE  Datafile(Pickle)
+  --file FILE, -f FILE  Pickled pandas.Dataframe file path
   --workdir WORKDIR, -w WORKDIR
-                        Working directory
+                        Working directory path
+  --config-file CONFIG_FILE
+                        Configuration file path
+  --config-section CONFIG_SECTION
+                        Configuration section name
   --deploy-result       Deploy results (all annotated images)
-  --generate-samplefile
-                        Generate sample datafile (sample.pkl.xz)
+  --create-config-file  Create default configuration file
+  --create-sample-datafile
+                        Create sample datafile (sample.pkl.xz)
 ```
 
 ```sh
@@ -55,7 +60,7 @@ python -m annotation --deploy-result
 ```sh
 # サンプルdatafile sample.pkl.xz を生成する
 # (カラム設定は config.ini に従う)
-python -m annotation --generate-samplefile
+python -m annotation --create-sample-datafile
 ```
 
 ### 備考
@@ -106,7 +111,14 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
 - datafile, workdir は
   [arguments](#arguments) でも指定できます。
   両方指定した場合は、argumentsの値が使われます。
-- セクションはDEFAULTしか使えません。
+- `--config-file` オプションで任意のファイルを指定できます。
+- セクションはデフォルトではDEFAULTを使います。
+  `--config-section` オプションで変更できます。
+
+```sh
+# デフォルト設定の設定ファイルを生成する
+python -m annotation --create-config-file
+```
 
 ```ini
 [DEFAULT]

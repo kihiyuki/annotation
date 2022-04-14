@@ -75,8 +75,59 @@ class config(object):
 
         return config_d
 
+    @staticmethod
+    def save(
+        data: dict,
+        file: str = "./config.ini",
+        section: str = "DEFAULT",
+        encoding: str = None,
+        exist_ok: bool = False,
+        overwrite: bool = False,
+    ) -> None:
+        """Save configuration dict to file.
 
-class rand(object):
+        Args:
+            data (dict): Configuration data (supports single/multiple sections)
+            file (str or Path, optional): Configuration file path
+            section (str, optional): Section (if single-section data)
+            encoding (str, optional): File encoding
+            exist_ok (bool, optional): If False and file exists, raise an error.
+            overwrite (bool, optional): If True and exist_ok and file exists, overwrite.
+
+        Returns:
+            None
+
+        Raises:
+            FileExistsError: If `exist_ok` is False and `file` exists.
+        """
+        filepath = Path(file)
+        config = ConfigParser()
+
+        multisection = True
+        for v in data.values():
+            if not isinstance(v, dict):
+                multisection = False
+                break
+
+        if multisection:
+            config.read_dict(data)
+        else:
+            config.read_dict({section: data})
+
+        write = True
+        if filepath.is_file():
+            if exist_ok:
+                if not overwrite:
+                    write = False
+            else:
+                raise FileExistsError(str(filepath))
+        if write:
+            with filepath.open(mode="w", encoding=encoding) as f:
+                config.write(f)
+        return None
+
+
+class random(object):
     def __init__(self) -> None:
         pass
 
