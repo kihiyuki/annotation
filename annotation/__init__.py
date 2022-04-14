@@ -39,9 +39,13 @@ class Arguments(ArgumentParser):
             action="count", default=0,
             help="Deploy results (all annotated images)")
         self.add_argument(
-            "--generate-samplefile",
+            "--create-config-file",
             action="count", default=0,
-            help="Generate sample datafile (sample.pkl.xz)")
+            help="Create default configuration file")
+        self.add_argument(
+            "--create-sample-datafile",
+            action="count", default=0,
+            help="Create sample datafile (sample.pkl.xz)")
         return None
 
     def parse_args(self, args=None, namespace=None):
@@ -52,7 +56,8 @@ class Arguments(ArgumentParser):
         pargs.deploy = bool(pargs.deploy)
         pargs.register = bool(pargs.register)
         pargs.deploy_result = bool(pargs.deploy_result)
-        pargs.generate_samplefile = bool(pargs.generate_samplefile)
+        pargs.create_config_file = bool(pargs.create_config_file)
+        pargs.create_sample_datafile = bool(pargs.create_sample_datafile)
         return pargs
 
 
@@ -93,6 +98,16 @@ def main(args=None) -> None:
         if config[k] == "":
             config[k] = None
 
+    if args.create_config_file:
+        if args.verbose:
+            print("create_config_file:", args.config_file)
+        configlib.save(
+            CONFIG_DEFAULT,
+            file=args.config_file,
+            section=args.config_section,
+            exist_ok=False)
+        return None
+
     if args.deploy_result:
         # Deploy annotated images only
         config["n"] = 0
@@ -101,8 +116,8 @@ def main(args=None) -> None:
     # Initialize 'Data' class
     data = Data(config)
 
-    if args.generate_samplefile:
-        data.generate_samplefile()
+    if args.create_sample_datafile:
+        data.create_sample_datafile()
         return None
 
     if args.deploy and args.register:

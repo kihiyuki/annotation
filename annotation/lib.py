@@ -75,6 +75,41 @@ class config(object):
 
         return config_d
 
+    @staticmethod
+    def save(
+        data: dict,
+        file: str = "./config.ini",
+        section: str = "DEFAULT",
+        encoding: str = None,
+        exist_ok: bool = False,
+        overwrite: bool = False,
+    ) -> None:
+        filepath = Path(file)
+        config = ConfigParser()
+
+        multisection = True
+        for v in data.values():
+            if not isinstance(v, dict):
+                multisection = False
+                break
+
+        if multisection:
+            config.read_dict(data)
+        else:
+            config.read_dict({section: data})
+
+        write = True
+        if filepath.is_file():
+            if exist_ok:
+                if not overwrite:
+                    write = False
+            else:
+                raise FileExistsError(str(filepath))
+        if write:
+            with filepath.open(mode="w", encoding=encoding) as f:
+                config.write(f)
+        return None
+
 
 class random(object):
     def __init__(self) -> None:

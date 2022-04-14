@@ -207,7 +207,7 @@ class Data(object):
         self.workdir.clear(subdirnames=[], verbose=self.verbose)
         return None
 
-    def generate_samplefile(
+    def create_sample_datafile(
         self, filename="sample.pkl.xz", n=100, backup=None) -> None:
         filepath = self.datafile.parent / filename
         if backup is None:
@@ -215,7 +215,7 @@ class Data(object):
         imgs = randomlib.image(n=n)
         ids = randomlib.string(n=n)
 
-        print(f"generate_samplefile: {filepath}")
+        print(f"create_sample_datafile: {filepath}")
         print(f"({n} images, col_filename={self.col_filename}, col_img={self.col_img})")
         df = pd.DataFrame()
         df[self.col_filename] = ids

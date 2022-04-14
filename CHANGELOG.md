@@ -2,7 +2,8 @@
 
 ## v1.3
 
-- コマンドラインオプション追加: `--config-file` `--config-section`
+- コマンドラインオプション追加: `--config-file` `--config-section` `--create-config-file`
+- コマンドラインオプション変更: `--generate-samplefile` -> `--create-sample-datafile`
 
 ## v1.2
 
