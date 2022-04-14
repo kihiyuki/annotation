@@ -84,6 +84,22 @@ class config(object):
         exist_ok: bool = False,
         overwrite: bool = False,
     ) -> None:
+        """Save configuration dict to file.
+
+        Args:
+            data (dict): Configuration data (supports single/multiple sections)
+            file (str or Path, optional): Configuration file path
+            section (str, optional): Section (if single-section data)
+            encoding (str, optional): File encoding
+            exist_ok (bool, optional): If False and file exists, raise an error.
+            overwrite (bool, optional): If True and exist_ok and file exists, overwrite.
+
+        Returns:
+            None
+
+        Raises:
+            FileExistsError: If `exist_ok` is False and `file` exists.
+        """
         filepath = Path(file)
         config = ConfigParser()
 
