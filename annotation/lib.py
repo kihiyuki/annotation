@@ -92,7 +92,7 @@ class config(object):
             section (str, optional): Section (if single-section data)
             encoding (str, optional): File encoding
             exist_ok (bool, optional): If False and file exists, raise an error.
-            overwrite (bool, optional): If True and exist_ok and file exists, overwrite.
+            overwrite (bool, optional): If True and file exists, overwrite.
 
         Returns:
             None
@@ -116,9 +116,10 @@ class config(object):
 
         write = True
         if filepath.is_file():
-            if exist_ok:
-                if not overwrite:
-                    write = False
+            if overwrite:
+                pass
+            elif exist_ok:
+                write = False
             else:
                 raise FileExistsError(str(filepath))
         if write:

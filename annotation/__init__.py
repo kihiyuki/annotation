@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from .lib import config as configlib
 from .data import Data, CONFIG_DEFAULT
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
 
 class Arguments(ArgumentParser):
