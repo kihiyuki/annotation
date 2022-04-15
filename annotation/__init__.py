@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from .lib import config as configlib
 from .data import Data, CONFIG_DEFAULT
 
-__version__ = "1.3.1"
+__version__ = "1.4.0"
 
 
 class Arguments(ArgumentParser):
@@ -32,7 +32,7 @@ class Arguments(ArgumentParser):
             help="Configuration file path")
         self.add_argument(
             "--config-section",
-            required=False, default="DEFAULT",
+            required=False, default="annotation",
             help="Configuration section name")
         self.add_argument(
             "--deploy-result",
@@ -66,14 +66,21 @@ def main(args=None) -> None:
     args = Arguments().parse_args(args=args)
 
     # Load configuration file
-    config = configlib.load(
+    kwargs = dict(
         file=args.config_file,
         section=args.config_section,
         notfound_ok=True,
         default=CONFIG_DEFAULT,
         cast=True,
         strict_cast=False,
-        strict_key=True)
+        strict_key=True,
+    )
+    try:
+        config = configlib.load(**kwargs)
+    except Exception:
+        print("configlib.load(section='DEFAULT')")
+        kwargs["section"] = "DEFAULT"
+        config = configlib.load(**kwargs)
 
     config["verbose"] = bool(config["verbose"] + args.verbose)
     if args.file is not None:
@@ -102,10 +109,9 @@ def main(args=None) -> None:
         if args.verbose:
             print("create_config_file:", args.config_file)
         configlib.save(
-            CONFIG_DEFAULT,
+            {args.config_section: CONFIG_DEFAULT},
             file=args.config_file,
-            section=args.config_section,
-            exist_ok=False)
+            section=None)
         return None
 
     if args.deploy_result:

@@ -112,7 +112,7 @@ array([[0.60988542, 0.06832986, 0.7105369 , 0.52975455],
   [arguments](#arguments) でも指定できます。
   両方指定した場合は、argumentsの値が使われます。
 - `--config-file` オプションで任意のファイルを指定できます。
-- セクションはデフォルトではDEFAULTを使います。
+- セクションはデフォルトではannotationを使います。
   `--config-section` オプションで変更できます。
 
 ```sh
@@ -121,7 +121,7 @@ python -m annotation --create-config-file
 ```
 
 ```ini
-[DEFAULT]
+[annotation]
 ; Pickled pandas.DataFrame file path
 datafile = ./data.pkl.xz
 ; Working directory path

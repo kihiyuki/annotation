@@ -1,5 +1,10 @@
 # Change Log
 
+## v1.4
+
+- 設定ファイルのデフォルトセクション名変更: `DEFAULT` -> `annotation`
+- lib.config.saveに `mode` オプション追加。
+
 ## v1.3
 
 - コマンドラインオプション追加: `--config-file` `--config-section` `--create-config-file`
