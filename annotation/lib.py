@@ -122,40 +122,49 @@ class config(object):
         filepath = Path(file)
         config_ = ConfigParser()
 
-        multisection = True
+        multisection_data = True
         for v in data.values():
             if not isinstance(v, dict):
-                multisection = False
+                multisection_data = False
                 break
+
+        if section is None:
+            # no section specified
+            if multisection_data:
+                # use all sections
+                pass
+            else:
+                # data has no section
+                ValueError("data must have section")
+        elif multisection_data:
+            # use only specified section
+            data = {section: data[section]}
+        else:
+            # data has no section
+            data = {section: data}
 
         write = True
         if filepath.is_file():
             mode = mode.lower()
             if mode in ["i", "interactive"]:
-                mode = input("([o]verwrite/[a]dd/[l]eave/[c]ancel)?: ").lower()
+                mode = input(f"'{filepath.name}' already exists --> ([o]verwrite/[a]dd/[l]eave/[c]ancel)?: ").lower()
             if mode in ["o", "overwrite"]:
                 pass
             elif mode in ["a", "add"]:
+                # always load all sections
                 data = config.load(
                     file = file,
-                    section = None if multisection else section, 
+                    section = None, 
                     encoding = encoding,
                     default = data,
                     cast = False,
                     strict_key = False)
-            elif mode in ["l", "leave"]:
+            elif mode in ["l", "leave", "c", "cancel", "n", "no"]:
                 write = False
-            elif mode in ["c", "cancel"]:
-                return None
             else:
                 raise ValueError(f"Unknown mode '{mode}'")
-
-        if multisection:
-            config_.read_dict(data)
-        else:
-            config_.read_dict({section: data})
-
         if write:
+            config_.read_dict(data)
             with filepath.open(mode="w", encoding=encoding) as f:
                 config_.write(f)
         return None
