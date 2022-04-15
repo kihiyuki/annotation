@@ -83,7 +83,8 @@ class Data(object):
             if label == self.label_null:
                 pass
             elif label not in self.labels:
-                print(f"Label '{label}' found")
+                if self.verbose:
+                    print(f"Label '{label}' found")
                 self.labels.append(label)
 
         return None
@@ -166,7 +167,8 @@ class Data(object):
             if labeldir.is_dir():
                 label = labeldir.name
                 if label not in self.labels:
-                    print(f"Label '{label}' found")
+                    if self.verbose:
+                        print(f"Label '{label}' found")
                     self.labels.append(label)
         for label in self.labels:
             filepaths = (self.workdir / label).glob(f"*{self.imgext}")
