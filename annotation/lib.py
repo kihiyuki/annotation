@@ -2,7 +2,7 @@ from configparser import ConfigParser
 from random import choices
 from string import ascii_letters, digits
 from pathlib import Path
-from warnings import warn
+from typing import Optional
 
 import numpy as np
 
@@ -14,10 +14,10 @@ class config(object):
     @staticmethod
     def load(
         file: str = "./config.ini",
-        section: str = "DEFAULT",
-        encoding: str = None,
+        section: Optional[str] = None,
+        encoding: Optional[str] = None,
         notfound_ok: bool = False,
-        default: dict = None,
+        default: Optional[dict] = None,
         cast: bool = False,
         strict_cast: bool = False,
         strict_key: bool = False,
@@ -26,13 +26,13 @@ class config(object):
 
         Args:
             file (str or Path, optional): Configuration file path
-            section (str, optional): Section
+            section (str, optional): Section (If None, load all sections)
             encoding (str, optional): File encoding
             notfound_ok (bool, optional): If True, return empty dict.
             default (dict, optional): Default values of config
             cast (bool, optional): If True, cast to type of default value.
             strict_cast (bool, optional): If False, cast as much as possible.
-            strict_key (bool, optional): If False, keys can be added, and warn.
+            strict_key (bool, optional): If False, keys can be added.
 
         Returns:
             dict
@@ -43,46 +43,64 @@ class config(object):
             KeyError: If `strict_key` is True and some keys of configfile is not in default.
         """
         filepath = Path(file)
-        config = ConfigParser()
+        config_ = ConfigParser()
         if filepath.is_file():
             with filepath.open(mode="r", encoding=encoding) as f:
-                config.read_file(f)
+                config_.read_file(f)
         elif not notfound_ok:
             raise FileNotFoundError(file)
 
-        if default is None:
-            config_d = dict(config[section])
+        if section is None:
+            multisection = True
+            sections = config_.sections()
         else:
-            config_d_f = dict(config[section])
-            config_d = default.copy()
-            for k, v in config_d_f.items():
-                if k in config_d:
-                    if cast:
-                        try:
-                            # cast to type(default[k])
-                            config_d[k] = type(config_d[k])(v)
-                        except ValueError as e:
-                            if strict_cast:
-                                raise ValueError(e)
-                            else:
-                                config_d[k] = v
-                    else:
-                        config_d[k] = v
-                elif strict_key:
-                    raise KeyError(k)
-                else:
-                    warn(f"Key '{k}' is not in default")
+            multisection = False
+            sections = [section]
 
-        return config_d
+        d_config = dict()
+        if default is None:
+            if multisection:
+                d_config = dict(config_).copy()
+            else:
+                d_config[section] = dict(config_[section])
+        else:
+            for s in sections:
+                if multisection:
+                    if s in default:
+                        d_config[s] = default[s].copy()
+                    else:
+                        d_config[s] = dict()
+                else:
+                    d_config[s] = default.copy()
+                for k, v in dict(config_[s]).items():
+                    if k in d_config[s]:
+                        if cast:
+                            try:
+                                # cast to type(default[k])
+                                d_config[s][k] = type(d_config[s][k])(v)
+                            except ValueError as e:
+                                if strict_cast:
+                                    raise ValueError(e)
+                                else:
+                                    d_config[s][k] = v
+                        else:
+                            d_config[s][k] = v
+                    elif strict_key:
+                        raise KeyError(k)
+                    else:
+                        d_config[s][k] = v
+        if not multisection:
+            d_config = d_config[section]
+
+        return d_config
 
     @staticmethod
     def save(
         data: dict,
         file: str = "./config.ini",
-        section: str = "DEFAULT",
-        encoding: str = None,
-        exist_ok: bool = False,
-        overwrite: bool = False,
+        section: str = None,
+        encoding: Optional[str] = None,
+        mode: str = "interactive",
     ) -> None:
         """Save configuration dict to file.
 
@@ -91,6 +109,7 @@ class config(object):
             file (str or Path, optional): Configuration file path
             section (str, optional): Section (if single-section data)
             encoding (str, optional): File encoding
+            mode (str, optional): 'interactive', 'overwrite', 'add', 'leave'
             exist_ok (bool, optional): If False and file exists, raise an error.
             overwrite (bool, optional): If True and file exists, overwrite.
 
@@ -98,10 +117,10 @@ class config(object):
             None
 
         Raises:
-            FileExistsError: If `exist_ok` is False and `file` exists.
+            ValueError: If `mode` is unknown
         """
         filepath = Path(file)
-        config = ConfigParser()
+        config_ = ConfigParser()
 
         multisection = True
         for v in data.values():
@@ -109,22 +128,36 @@ class config(object):
                 multisection = False
                 break
 
-        if multisection:
-            config.read_dict(data)
-        else:
-            config.read_dict({section: data})
-
         write = True
         if filepath.is_file():
-            if overwrite:
+            mode = mode.lower()
+            if mode in ["i", "interactive"]:
+                mode = input("([o]verwrite/[a]dd/[l]eave/[c]ancel)?: ").lower()
+            if mode in ["o", "overwrite"]:
                 pass
-            elif exist_ok:
+            elif mode in ["a", "add"]:
+                data = config.load(
+                    file = file,
+                    section = None if multisection else section, 
+                    encoding = encoding,
+                    default = data,
+                    cast = False,
+                    strict_key = False)
+            elif mode in ["l", "leave"]:
                 write = False
+            elif mode in ["c", "cancel"]:
+                return None
             else:
-                raise FileExistsError(str(filepath))
+                raise ValueError(f"Unknown mode '{mode}'")
+
+        if multisection:
+            config_.read_dict(data)
+        else:
+            config_.read_dict({section: data})
+
         if write:
             with filepath.open(mode="w", encoding=encoding) as f:
-                config.write(f)
+                config_.write(f)
         return None
 
 
