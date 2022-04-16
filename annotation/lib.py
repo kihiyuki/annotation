@@ -1,3 +1,4 @@
+import shutil
 from configparser import ConfigParser, DEFAULTSECT
 from random import choices
 from string import ascii_letters, digits
@@ -127,6 +128,8 @@ class config(object):
         section: str = None,
         encoding: Optional[str] = None,
         mode: str = "interactive",
+        backup: bool = True,
+        backup_suffix: str = "~",
     ) -> None:
         """Save configuration dict to file.
 
@@ -138,6 +141,8 @@ class config(object):
             mode (str, optional): 'interactive', 'overwrite', 'add', 'leave'
             exist_ok (bool, optional): If False and file exists, raise an error.
             overwrite (bool, optional): If True and file exists, overwrite.
+            backup (bool, optional): If True and file exeists, create backup file.
+            backup_suffix (str, optional): Suffix of backup file name
 
         Returns:
             None
@@ -171,13 +176,21 @@ class config(object):
                     strict_key = False)
             elif mode in ["l", "leave", "c", "cancel", "n", "no"]:
                 write = False
+                backup = False
             else:
                 raise ValueError(f"Unknown mode '{mode}'")
+            if backup:
+                config._backup(file=file, suffix=backup_suffix)
         if write:
             config_.read_dict(data)
             with filepath.open(mode="w", encoding=encoding) as f:
                 config_.write(f)
         return None
+
+    @staticmethod
+    def _backup(file: str, suffix: str = "~"):
+        file_back = str(file) + suffix
+        shutil.copyfile(file, file_back)
 
 
 class random(object):
