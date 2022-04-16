@@ -7,35 +7,36 @@ from typing import Optional
 import numpy as np
 
 
-# class ConfigData(dict):
-
-
-class config(object):
-    def __init__(self) -> None:
-        pass
-
-    @staticmethod
-    def _has_section(data: dict) -> bool:
-        has_section = True
-        for v in data.values():
-            if not isinstance(v, dict):
-                has_section = False
-                break
-        return has_section
-
-    @staticmethod
-    def _format_section(data: dict, section: Optional[str] = None) -> dict:
-        if config._has_section(data):
+class ConfigData(dict):
+    def __init__(self, data: dict, section: Optional[str] = None):
+        if self._have_section(data):
             if section is None:
                 pass
             elif section not in data:
                 data[section] = dict()
         else:
             if section is None:
-                raise ValueError("data must have section")
+                raise ValueError("ConfigData must have section")
             else:
                 data = {section: data}
-        return data
+        return super().__init__(data)
+
+    def to_dict(self) -> dict:
+        return dict(self)
+
+    @staticmethod
+    def _have_section(data: dict) -> bool:
+        have = True
+        for v in data.values():
+            if not isinstance(v, dict):
+                have = False
+                break
+        return have
+
+
+class config(object):
+    def __init__(self) -> None:
+        pass
 
     @staticmethod
     def load(
@@ -78,16 +79,17 @@ class config(object):
 
         allsection = section is None
         if allsection:
-            sections = config_.sections()
+            sections_file = config_.sections()
             if len(dict(config_[DEFAULTSECT])) > 0:
-                sections = [DEFAULTSECT] + sections
+                sections_file = [DEFAULTSECT] + sections_file
         else:
-            sections = [section]
+            sections_file = [section]
+        sections = sections_file.copy()
 
         if default is None:
             default = dict()
         else:
-            default = config._format_section(default, section)
+            default = ConfigData(default, section=section).to_dict()
             for k in default.keys():
                 if k not in sections:
                     sections.append(k)
@@ -98,6 +100,8 @@ class config(object):
                 data[s] = default[s].copy()
             else:
                 data[s] = dict()
+            if s not in sections_file:
+                continue
             for k, v in dict(config_[s]).items():
                 if k in data[s]:
                     if cast:
@@ -144,7 +148,7 @@ class config(object):
         filepath = Path(file)
         config_ = ConfigParser()
 
-        data = config._format_section(data, section)
+        data = ConfigData(data, section=section).to_dict()
         if section is not None:
             # use only specified section
             data = {section: data[section]}
