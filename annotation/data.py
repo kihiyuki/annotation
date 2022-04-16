@@ -33,6 +33,35 @@ CONFIG_DEFAULT = dict(
 )
 
 
+class Config(dict):
+    def conv(self) -> None:
+        # bool
+        for k in ["random", "backup"]:
+            self[k] = bool(self[k])
+        # list(separator=",")
+        for k in ["labels", "figsize"]:
+            if self[k] == "":
+                self[k] = list()
+            else:
+                self[k] = self[k].split(",")
+        # list[float]
+        for k in ["figsize"]:
+            self[k] = [float(x) for x in self[k]]
+        # None
+        for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
+            if self[k] == "":
+                self[k] = None
+
+    def conv_to_str(self) -> None:
+        for k, v in self.items():
+            if v is None:
+                self[k] = ""
+            elif type(v) is bool:
+                self[k] = str(int(v))
+            elif type(v) is list:
+                self[k] = ",".join([str(x) for x in v])
+
+
 class _WorkDir(type(pathlib.Path())):
     def clear(self, subdirnames: list, verbose=False) -> None:
         pathstr = str(self)

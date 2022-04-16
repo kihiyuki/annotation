@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 from . import gui, message
 from .lib import config as configlib
-from .data import Data, CONFIG_DEFAULT
+from .data import Data, Config, CONFIG_DEFAULT
 
 __version__ = "1.5.1"
 
@@ -87,28 +87,15 @@ def main(args=None) -> None:
         kwargs["section"] = "DEFAULT"
         config = configlib.load(**kwargs)
 
+    config = Config(config)
+
     config["verbose"] = bool(config["verbose"] + args.verbose)
     if args.file is not None:
         config["datafile"] = args.file
     if args.workdir is not None:
         config["workdir"] = args.workdir
 
-    # bool
-    for k in ["random", "backup"]:
-        config[k] = bool(config[k])
-    # list(separator=",")
-    for k in ["labels", "figsize"]:
-        if config[k] == "":
-            config[k] = list()
-        else:
-            config[k] = config[k].split(",")
-    # list[float]
-    for k in ["figsize"]:
-        config[k] = [float(x) for x in config[k]]
-    # None
-    for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
-        if config[k] == "":
-            config[k] = None
+    config.conv()
 
     if args.create_config_file:
         if args.verbose:

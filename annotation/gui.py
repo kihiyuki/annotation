@@ -9,7 +9,7 @@ from tkinter import (
     W,
 )
 from . import message
-from .data import Data
+from .data import Data, Config
 
 
 class GridKw(object):
@@ -80,6 +80,14 @@ def main(data: Data, config: dict) -> None:
             data.n_example = config["n_example"]
 
     def _config(event=None):
+        def _save(event=None):
+            r = messagebox.askyesno("Save config", f"Save and reload datafile?")
+            if r:
+                cw.destroy()
+
+        def _close(event=None):
+            cw.destroy()
+
         cw = Toplevel()
         cw.title("Config")
         cw.resizable(False, False)
@@ -87,19 +95,15 @@ def main(data: Data, config: dict) -> None:
         frm.grid()
         gridkw = GridKw(maxcolumn=1)
         entries = dict()
-        for k, v in config.items():
+        config_ = Config(config)
+        config_.conv_to_str()
+        for k, v in config_.items():
             ttk.Label(frm, text=f"{k}: {message.CONFIG[k]}").grid(**gridkw.pull())
             entries[k] = Entry(frm, width=50)
-            if v is None:
-                v = ""
-            elif type(v) is bool:
-                v = int(v)
-            elif type(v) is list:
-                v = ",".join([str(x) for x in v])
             entries[k].insert(END, str(v))
             entries[k].grid(**gridkw.pull())
-        ttk.Button(frm, text="Save", command=None).grid(**gridkw.pull())
-        ttk.Button(frm, text="Cancel", command=cw.destroy).grid(**gridkw.pull())
+        ttk.Button(frm, text="Save", command=_save).grid(**gridkw.pull())
+        ttk.Button(frm, text="Cancel", command=_close).grid(**gridkw.pull())
 
     data.load()
 
