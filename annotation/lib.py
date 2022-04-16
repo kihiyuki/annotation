@@ -7,9 +7,35 @@ from typing import Optional
 import numpy as np
 
 
+# class ConfigData(dict):
+
+
 class config(object):
     def __init__(self) -> None:
         pass
+
+    @staticmethod
+    def _has_section(data: dict) -> bool:
+        has_section = True
+        for v in data.values():
+            if not isinstance(v, dict):
+                has_section = False
+                break
+        return has_section
+
+    @staticmethod
+    def _format_section(data: dict, section: Optional[str] = None) -> dict:
+        if config._has_section(data):
+            if section is None:
+                pass
+            elif section not in data:
+                data[section] = dict()
+        else:
+            if section is None:
+                raise ValueError("data must have section")
+            else:
+                data = {section: data}
+        return data
 
     @staticmethod
     def load(
@@ -50,49 +76,45 @@ class config(object):
         elif not notfound_ok:
             raise FileNotFoundError(file)
 
-        if section is None:
-            multisection = True
+        allsection = section is None
+        if allsection:
             sections = config_.sections()
             if len(dict(config_[DEFAULTSECT])) > 0:
-                sections += [DEFAULTSECT]
+                sections = [DEFAULTSECT] + sections
         else:
-            multisection = False
             sections = [section]
 
-        d_config = dict()
         if default is None:
-            for s in sections:
-                d_config[s] = dict(config_[s])
+            default = dict()
         else:
-            for s in sections:
-                if multisection:
-                    if s in default:
-                        d_config[s] = default[s].copy()
-                    else:
-                        d_config[s] = dict()
-                else:
-                    d_config[s] = default.copy()
-                for k, v in dict(config_[s]).items():
-                    if k in d_config[s]:
-                        if cast:
-                            try:
-                                # cast to type(default[k])
-                                d_config[s][k] = type(d_config[s][k])(v)
-                            except ValueError as e:
-                                if strict_cast:
-                                    raise ValueError(e)
-                                else:
-                                    d_config[s][k] = v
-                        else:
-                            d_config[s][k] = v
-                    elif strict_key:
-                        raise KeyError(k)
-                    else:
-                        d_config[s][k] = v
-        if not multisection:
-            d_config = d_config[section]
+            default = config._format_section(default, section)
+            for k in default.keys():
+                if k not in sections:
+                    sections.append(k)
 
-        return d_config
+        data = dict()
+        for s in sections:
+            if s in default:
+                data[s] = default[s].copy()
+            else:
+                data[s] = dict()
+            for k, v in dict(config_[s]).items():
+                if k in data[s]:
+                    if cast:
+                        try:
+                            # cast to type(default[k])
+                            v = type(data[s][k])(v)
+                        except ValueError as e:
+                            if strict_cast:
+                                raise ValueError(e)
+                elif strict_key:
+                    raise KeyError(k)
+                data[s][k] = v
+
+        if not allsection:
+            data = data[section]
+
+        return data
 
     @staticmethod
     def save(
@@ -122,26 +144,10 @@ class config(object):
         filepath = Path(file)
         config_ = ConfigParser()
 
-        multisection_data = True
-        for v in data.values():
-            if not isinstance(v, dict):
-                multisection_data = False
-                break
-
-        if section is None:
-            # no section specified
-            if multisection_data:
-                # use all sections
-                pass
-            else:
-                # data has no section
-                raise ValueError("data must have section")
-        elif multisection_data:
+        data = config._format_section(data, section)
+        if section is not None:
             # use only specified section
             data = {section: data[section]}
-        else:
-            # data has no section
-            data = {section: data}
 
         write = True
         if filepath.is_file():
