@@ -1,9 +1,10 @@
 from argparse import ArgumentParser
 
+from . import gui
 from .lib import config as configlib
 from .data import Data, CONFIG_DEFAULT
 
-__version__ = "1.4.2"
+__version__ = "1.5.0"
 
 
 class Arguments(ArgumentParser):
@@ -17,6 +18,9 @@ class Arguments(ArgumentParser):
             action="count", default=0)
         self.add_argument(
             "--verbose", "-v",
+            action="count", default=0)
+        self.add_argument(
+            "--gui", "-g",
             action="count", default=0)
         self.add_argument(
             "--file", "-f",
@@ -55,6 +59,7 @@ class Arguments(ArgumentParser):
         # cast to bool
         pargs.deploy = bool(pargs.deploy)
         pargs.register = bool(pargs.register)
+        pargs.gui = bool(pargs.gui)
         pargs.deploy_result = bool(pargs.deploy_result)
         pargs.create_config_file = bool(pargs.create_config_file)
         pargs.create_sample_datafile = bool(pargs.create_sample_datafile)
@@ -132,10 +137,11 @@ def main(args=None) -> None:
     # Load pickle datafile
     data.load()
 
-    if args.deploy:
+    if args.gui:
+        gui.main(data=data)
+    elif args.deploy:
         data.deploy()
-
-    if args.register:
+    elif args.register:
         data.register()
 
     return None

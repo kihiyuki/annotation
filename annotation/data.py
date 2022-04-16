@@ -61,6 +61,18 @@ class Data(object):
             print(config)
         return None
 
+    def __len__(self) -> int:
+        return len(self.df)
+
+    def count(self, type="all") -> int:
+        type = type.lower()
+        if type.lower() == "all":
+            return len(self)
+        elif type.lower() == "annotated":
+            return (self.df[self.col_label]!=self.label_null).sum()
+        else:
+            raise ValueError(f"Type '{type}' is not defined")
+
     def load(self) -> None:
         self.df = pd.read_pickle(self.datafile)
         if self.col_label not in self.df.columns:
@@ -90,8 +102,8 @@ class Data(object):
         return None
 
     def info(self) -> None:
-        print("len(df):", len(self.df))
-        print("annotated:", (self.df[self.col_label]!=self.label_null).sum())
+        print("data:", self.count("all"))
+        print("annotated:", self.count("annotated"))
         return None
 
     def get_labelled(

@@ -31,6 +31,13 @@ python -m annotation -d
 python -m annotation -r
 ```
 
+または
+
+```sh
+# ウインドウ(GUI)を開く
+python -m annotation -g
+```
+
 ### Optional arguments
 
 ```
@@ -39,6 +46,7 @@ optional arguments:
   --deploy, -d
   --register, -r
   --verbose, -v
+  --gui, -g
   --file FILE, -f FILE  Pickled pandas.Dataframe file path
   --workdir WORKDIR, -w WORKDIR
                         Working directory path

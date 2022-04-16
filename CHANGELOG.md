@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.5
+
+- GUI追加(Tkinter)
+
 ## v1.4
 
 - 設定ファイルのデフォルトセクション名変更: `DEFAULT` -> `annotation`
