@@ -66,18 +66,24 @@ class TestConfig(object):
         assert config_load == sampleconfig
 
     @pytest.mark.parametrize("section", [None, "a", "c"])
-    def test_save_add_param(self, sampleconfig, section):
+    @pytest.mark.parametrize("has_section", [False, True])
+    def test_save_add_param(self, sampleconfig, section, has_section):
         config = dict(x="addx", z="addz")
         if section is None:
             with pytest.raises(ValueError):
                 lib.config.save(config, file=CONFIGFILE, mode="a", section=section)
         else:
-            lib.config.save(config, file=CONFIGFILE, mode="a", section=section)
+            lib.config.save(
+                {section: config} if has_section else config,
+                file=CONFIGFILE,
+                mode="a",
+                section=None if has_section else section,
+            )
             config_load = lib.config.load(file=CONFIGFILE)
             c = sampleconfig.copy()
             if section == "c":
-                c[section] = dict(x="addx")
-                # c[section]["x"] = 
+                c[section] = dict()
+                c[section]["x"] = "addx"
             c[section]["z"] = "addz"
             assert c == config_load
 
