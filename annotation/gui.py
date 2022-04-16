@@ -1,16 +1,18 @@
 import subprocess
 from tkinter import Tk, ttk, messagebox
+
+from . import message
 from .data import Data
 
 
 def main(data: Data) -> None:
     def _deploy(event=None):
-        r = messagebox.askyesno("Deploy", "Deploy data to working directory?")
+        r = messagebox.askyesno("Deploy", f"{message.DEPLOY}?")
         if r:
             data.deploy()
 
     def _register(event=None):
-        r = messagebox.askyesno("Register", "Register annotation result to datafile?")
+        r = messagebox.askyesno("Register", f"{message.REGISTER}?")
         if r:
             data.register()
 

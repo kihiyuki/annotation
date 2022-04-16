@@ -1,10 +1,10 @@
 from argparse import ArgumentParser
 
-from . import gui
+from . import gui, message
 from .lib import config as configlib
 from .data import Data, CONFIG_DEFAULT
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
 
 class Arguments(ArgumentParser):
@@ -25,23 +25,23 @@ class Arguments(ArgumentParser):
         self.add_argument(
             "--file", "-f",
             required=False, default=None,
-            help="Pickled pandas.Dataframe file path")
+            help=message.DATAFILE)
         self.add_argument(
             "--workdir", "-w",
             required=False, default=None,
-            help="Working directory path")
+            help=message.WORKDIR)
         self.add_argument(
             "--config-file",
             required=False, default="./config.ini",
-            help="Configuration file path")
+            help=message.CONFIGFILE)
         self.add_argument(
             "--config-section",
             required=False, default="annotation",
-            help="Configuration section name")
+            help=message.CONFIGSECTION)
         self.add_argument(
             "--deploy-result",
             action="count", default=0,
-            help="Deploy results (all annotated images)")
+            help=message.DEPROYRESULT)
         self.add_argument(
             "--create-config-file",
             action="count", default=0,
