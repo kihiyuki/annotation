@@ -131,6 +131,6 @@ dmypy.json
 # annotation
 # *.png
 *.pkl*
-*.ini
+*.ini*
 work/
 *.ipynb
