@@ -131,15 +131,17 @@ def main(args=None) -> None:
         data.create_sample_datafile()
         return None
 
+    if args.gui:
+        gui.main(data=data, config=config)
+        return None
+
     if args.deploy and args.register:
         raise Exception("Both '--deploy' and '--register' are active")
 
     # Load pickle datafile
     data.load()
 
-    if args.gui:
-        gui.main(data=data)
-    elif args.deploy:
+    if args.deploy:
         data.deploy()
     elif args.register:
         data.register()
