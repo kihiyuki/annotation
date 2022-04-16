@@ -135,7 +135,7 @@ class config(object):
                 pass
             else:
                 # data has no section
-                ValueError("data must have section")
+                raise ValueError("data must have section")
         elif multisection_data:
             # use only specified section
             data = {section: data[section]}
