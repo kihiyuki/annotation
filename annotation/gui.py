@@ -22,15 +22,12 @@ def main(data: Data, config: dict) -> None:
     def _deploy_result(event=None):
         r = messagebox.askyesno("Register", f"{message.DEPROYRESULT}?")
         if r:
-            n = data.n
-            n_example = data.n_example
-
             data.n = 0
             data.n_example = None
             data.deploy()
 
-            data.n = n
-            data.n_example = n_example
+            data.n = config["n"]
+            data.n_example = config["n_example"]
 
     data.load()
 
