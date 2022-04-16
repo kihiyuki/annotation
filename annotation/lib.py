@@ -1,4 +1,4 @@
-from configparser import ConfigParser
+from configparser import ConfigParser, DEFAULTSECT
 from random import choices
 from string import ascii_letters, digits
 from pathlib import Path
@@ -53,16 +53,16 @@ class config(object):
         if section is None:
             multisection = True
             sections = config_.sections()
+            if len(dict(config_[DEFAULTSECT])) > 0:
+                sections += [DEFAULTSECT]
         else:
             multisection = False
             sections = [section]
 
         d_config = dict()
         if default is None:
-            if multisection:
-                d_config = dict(config_).copy()
-            else:
-                d_config[section] = dict(config_[section])
+            for s in sections:
+                d_config[s] = dict(config_[s])
         else:
             for s in sections:
                 if multisection:
