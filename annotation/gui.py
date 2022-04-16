@@ -1,4 +1,5 @@
 import subprocess
+
 from tkinter import (
     Tk,
     ttk,
@@ -8,7 +9,9 @@ from tkinter import (
     END,
     W,
 )
+
 from . import message
+from .lib import config as configlib
 from .data import Data, Config
 
 
@@ -56,7 +59,7 @@ class GridKw(object):
         )
 
 
-def main(data: Data, config: dict) -> None:
+def main(data: Data, args, config: dict) -> None:
     def _deploy(event=None):
         r = messagebox.askyesno("Deploy", f"{message.DEPLOY}?")
         if r:
@@ -81,8 +84,19 @@ def main(data: Data, config: dict) -> None:
 
     def _config(event=None):
         def _save(event=None):
-            r = messagebox.askyesno("Save config", f"Save and reload datafile?")
+            r = messagebox.askyesno("Save config", f"Save to configfile and reload datafile?")
             if r:
+                # config_ = Config()
+                # for k, entry in entries.items():
+                #     config_[k] = entry.get()
+                # configlib.save(
+                #     {args.config_section: config_},
+                #     file=args.config_file,
+                #     section=None,
+                #     mode="overwrite")
+                # config_.conv()
+                # data = Data(config_)
+                # data.load()
                 cw.destroy()
 
         def _close(event=None):

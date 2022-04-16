@@ -119,7 +119,7 @@ def main(args=None) -> None:
         return None
 
     if args.gui:
-        gui.main(data=data, config=config)
+        gui.main(data=data, args=args, config=config)
         return None
 
     if args.deploy and args.register:
