@@ -37,8 +37,14 @@ CONFIG_DEFAULT = dict(
 class Config(dict):
     def conv(self) -> None:
         # bool
-        for k in ["random", "backup"]:
+        for k in ["random", "backup", "verbose"]:
             self[k] = bool(self[k])
+        # int
+        for k in ["n", "n_example"]:
+            self[k] = int(self[k])
+        # float
+        for k in ["vmin", "vmax"]:
+            self[k] = float(self[k])
         # list(separator=",")
         for k in ["labels", "figsize"]:
             if self[k] == "":

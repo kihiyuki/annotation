@@ -76,7 +76,7 @@ def main(args=None) -> None:
         section=args.config_section,
         notfound_ok=True,
         default=CONFIG_DEFAULT,
-        cast=True,
+        cast=False,
         strict_cast=False,
         strict_key=True,
     )
@@ -88,14 +88,12 @@ def main(args=None) -> None:
         config = configlib.load(**kwargs)
 
     config = Config(config)
-
-    config["verbose"] = bool(config["verbose"] + args.verbose)
     if args.file is not None:
         config["datafile"] = args.file
     if args.workdir is not None:
         config["workdir"] = args.workdir
-
     config.conv()
+    config["verbose"] = bool(config["verbose"] + args.verbose)
 
     if args.create_config_file:
         if args.verbose:
@@ -119,7 +117,7 @@ def main(args=None) -> None:
         return None
 
     if args.gui:
-        gui.main(data=data, args=args, config=config)
+        gui.main(data=data, args=args)
         return None
 
     if args.deploy and args.register:
