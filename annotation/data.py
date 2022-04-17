@@ -52,6 +52,7 @@ class Config(dict):
         for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
             if self[k] == "":
                 self[k] = None
+        return None
 
     def conv_to_str(self) -> None:
         for k, v in self.items():
@@ -61,6 +62,9 @@ class Config(dict):
                 self[k] = str(int(v))
             elif type(v) is list:
                 self[k] = ",".join([str(x) for x in v])
+            else:
+                self[k] = str(v)
+        return None
 
 
 class _WorkDir(type(pathlib.Path())):
@@ -83,8 +87,18 @@ class _WorkDir(type(pathlib.Path())):
 
 
 class Data(object):
-    def __init__(self, config=dict(), default=CONFIG_DEFAULT) -> None:
-        for k in default.keys():
+    def __init__(self, config: dict = dict(), default: dict = None) -> None:
+        self._init(config=config, default=default)
+        return None
+
+    def __len__(self) -> int:
+        return len(self.df)
+
+    def _init(self, config: dict, default: dict = None) -> None:
+        if default is None:
+            default = CONFIG_DEFAULT
+        self.__configkeys = list(default.keys())
+        for k in self.__configkeys:
             if k in config:
                 self.__setattr__(k, config[k])
             else:
@@ -97,8 +111,13 @@ class Data(object):
             print(config)
         return None
 
-    def __len__(self) -> int:
-        return len(self.df)
+    def get_config(self, str_=False) -> Config:
+        c = Config()
+        for k in self.__configkeys:
+            c[k] = self.__getattribute__(k)
+        if str_:
+            c.conv_to_str()
+        return c
 
     def count(self, type: str = "all") -> int:
         type = type.lower()
