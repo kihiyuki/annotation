@@ -1,10 +1,10 @@
 from argparse import ArgumentParser
 
-from . import gui
+from . import gui, message
 from .lib import config as configlib
-from .data import Data, CONFIG_DEFAULT
+from .data import Data, Config, CONFIG_DEFAULT
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
 
 class Arguments(ArgumentParser):
@@ -25,23 +25,23 @@ class Arguments(ArgumentParser):
         self.add_argument(
             "--file", "-f",
             required=False, default=None,
-            help="Pickled pandas.Dataframe file path")
+            help=message.DATAFILE)
         self.add_argument(
             "--workdir", "-w",
             required=False, default=None,
-            help="Working directory path")
+            help=message.WORKDIR)
         self.add_argument(
             "--config-file",
             required=False, default="./config.ini",
-            help="Configuration file path")
+            help=message.CONFIGFILE)
         self.add_argument(
             "--config-section",
             required=False, default="annotation",
-            help="Configuration section name")
+            help=message.CONFIGSECTION)
         self.add_argument(
             "--deploy-result",
             action="count", default=0,
-            help="Deploy results (all annotated images)")
+            help=message.DEPROYRESULT)
         self.add_argument(
             "--create-config-file",
             action="count", default=0,
@@ -76,7 +76,7 @@ def main(args=None) -> None:
         section=args.config_section,
         notfound_ok=True,
         default=CONFIG_DEFAULT,
-        cast=True,
+        cast=False,
         strict_cast=False,
         strict_key=True,
     )
@@ -87,28 +87,13 @@ def main(args=None) -> None:
         kwargs["section"] = "DEFAULT"
         config = configlib.load(**kwargs)
 
-    config["verbose"] = bool(config["verbose"] + args.verbose)
+    config = Config(config)
     if args.file is not None:
         config["datafile"] = args.file
     if args.workdir is not None:
         config["workdir"] = args.workdir
-
-    # bool
-    for k in ["random", "backup"]:
-        config[k] = bool(config[k])
-    # list(separator=",")
-    for k in ["labels", "figsize"]:
-        if config[k] == "":
-            config[k] = list()
-        else:
-            config[k] = config[k].split(",")
-    # list[float]
-    for k in ["figsize"]:
-        config[k] = [float(x) for x in config[k]]
-    # None
-    for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
-        if config[k] == "":
-            config[k] = None
+    config.conv()
+    config["verbose"] = bool(config["verbose"] + args.verbose)
 
     if args.create_config_file:
         if args.verbose:
@@ -131,15 +116,17 @@ def main(args=None) -> None:
         data.create_sample_datafile()
         return None
 
+    if args.gui:
+        gui.main(data=data, args=args)
+        return None
+
     if args.deploy and args.register:
         raise Exception("Both '--deploy' and '--register' are active")
 
     # Load pickle datafile
     data.load()
 
-    if args.gui:
-        gui.main(data=data)
-    elif args.deploy:
+    if args.deploy:
         data.deploy()
     elif args.register:
         data.register()

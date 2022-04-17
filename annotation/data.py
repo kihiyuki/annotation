@@ -1,5 +1,6 @@
 import shutil
 import pathlib
+from typing import Optional
 from warnings import warn
 
 import pandas as pd
@@ -33,9 +34,59 @@ CONFIG_DEFAULT = dict(
 )
 
 
+class Config(dict):
+    def conv(self) -> None:
+        # bool
+        for k in ["random", "backup", "verbose"]:
+            self[k] = bool(self[k])
+        # int
+        for k in ["n", "n_example"]:
+            self[k] = int(self[k])
+        # float
+        for k in ["vmin", "vmax"]:
+            self[k] = float(self[k])
+        # list(separator=",")
+        for k in ["labels", "figsize"]:
+            if self[k] == "":
+                self[k] = list()
+            else:
+                self[k] = self[k].split(",")
+        # list[float]
+        for k in ["figsize"]:
+            self[k] = [float(x) for x in self[k]]
+        # Path
+        for k in ["datafile"]:
+            self[k] = pathlib.Path(self[k])
+        # _WorkDir
+        self["workdir"] = _WorkDir(self["workdir"])
+        # None
+        for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
+            if self[k] == "":
+                self[k] = None
+        return None
+
+    def conv_to_str(self) -> None:
+        for k, v in self.items():
+            if v is None:
+                self[k] = ""
+            elif type(v) is bool:
+                self[k] = str(int(v))
+            elif type(v) is list:
+                self[k] = ",".join([str(x) for x in v])
+            else:
+                self[k] = str(v)
+        return None
+
+
 class _WorkDir(type(pathlib.Path())):
-    def clear(self, subdirnames: list, verbose=False) -> None:
+    def clear(
+        self,
+        subdirnames: Optional[list] = None,
+        verbose: bool = False
+    ) -> None:
         pathstr = str(self)
+        if subdirnames is None:
+            subdirnames = list()
         if verbose:
             print("clear:", pathstr)
         if self.is_dir():
@@ -47,24 +98,36 @@ class _WorkDir(type(pathlib.Path())):
 
 
 class Data(object):
-    def __init__(self, config=dict(), default=CONFIG_DEFAULT) -> None:
-        for k in default.keys():
-            if k in config:
-                self.__setattr__(k, config[k])
-            else:
-                self.__setattr__(k, default[k])
-
-        self.datafile = pathlib.Path(self.datafile)
-        self.workdir= _WorkDir(self.workdir)
-
-        if self.verbose:
-            print(config)
+    def __init__(self, config: dict = dict(), default: dict = None) -> None:
+        self._init(config=config, default=default)
         return None
 
     def __len__(self) -> int:
         return len(self.df)
 
-    def count(self, type="all") -> int:
+    def _init(self, config: dict, default: dict = None) -> None:
+        if default is None:
+            default = CONFIG_DEFAULT
+        self.__configkeys = list(default.keys())
+        for k in self.__configkeys:
+            if k in config:
+                self.__setattr__(k, config[k])
+            else:
+                self.__setattr__(k, default[k])
+
+        if self.verbose:
+            print(config)
+        return None
+
+    def get_config(self, str_=False) -> Config:
+        c = Config()
+        for k in self.__configkeys:
+            c[k] = self.__getattribute__(k)
+        if str_:
+            c.conv_to_str()
+        return c
+
+    def count(self, type: str = "all") -> int:
         type = type.lower()
         if type.lower() == "all":
             return len(self)
@@ -222,7 +285,11 @@ class Data(object):
         return None
 
     def create_sample_datafile(
-        self, filename="sample.pkl.xz", n=100, backup=None) -> None:
+        self,
+        filename: str = "sample.pkl.xz",
+        n: int = 100,
+        backup: Optional[bool] = None
+    ) -> None:
         filepath = self.datafile.parent / filename
         if backup is None:
             backup = self.backup
