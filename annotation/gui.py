@@ -6,6 +6,7 @@ from tkinter import (
     messagebox,
     Toplevel,
     Entry,
+    StringVar,
     END,
     W,
 )
@@ -71,6 +72,35 @@ class GridKw(object):
         )
 
 
+class StringVars(object):
+    def __init__(self, keys: list) -> None:
+        self._data = dict()
+        for k in keys:
+            self._data[k] = StringVar()
+            self._data[k].set(k)
+        return None
+
+    def get(self, key: str):
+        return self._data[key]
+
+    def set(self, key: str , value: str) -> None:
+        self._data[key].set(value)
+        return None
+
+
+class DatasetInfo(StringVars):
+    def __init__(self) -> None:
+        super().__init__(["datafile", "workdir", "count_all", "count_annotated"])
+
+    def reload(self, data) -> None:
+        for k in ["datafile", "workdir"]:
+            self.set(k, f"{k}: {data.__getattribute__(k).resolve()}")
+        for k in ["count_all", "count_annotated"]:
+            # NOTE: remove 'count_'
+            k_ = k[6:]
+            self.set(k, f"data({k_}): {data.count(k_)}")
+
+
 class GridObject(object):
     def __init__(self, frame) -> None:
         self._data = dict()
@@ -92,12 +122,15 @@ class Buttons(GridObject):
 
 
 class Labels(GridObject):
-    def add(self, text: str, labelkw, gridkw, name: str = None, fullspan=False) -> None:
-        object_ = ttk.Label(self.frame, text=text, **labelkw)
+    def add(self, text, labelkw, gridkw, name: str = None, fullspan=False) -> None:
+        if type(text) is str:
+            object_ = ttk.Label(self.frame, text=text, **labelkw)
+        else:  # TODO: elif
+            object_ = ttk.Label(self.frame, textvariable=text, **labelkw)
         return super().add(object_, gridkw, text, name, fullspan)
 
 
-def main(data: Data, args, config: dict) -> None:
+def main(data: Data, args) -> None:
     def _deploy(event=None):
         r = messagebox.askyesno("Deploy", f"{message.DEPLOY}?")
         if r:
@@ -107,6 +140,7 @@ def main(data: Data, args, config: dict) -> None:
         r = messagebox.askyesno("Register", f"{message.REGISTER}?")
         if r:
             data.register()
+            datasetinfo.reload(data)
 
     def _open(event=None):
         subprocess.Popen(["explorer",  data.workdir], shell=True)
@@ -122,32 +156,44 @@ def main(data: Data, args, config: dict) -> None:
             data.n = 0
             data.n_example = None
             data.deploy()
+            config = data.get_config()
             data.n = config["n"]
             data.n_example = config["n_example"]
 
     def _config(event=None):
         def _save(event=None):
-            r = messagebox.askyesno("Save config", f"Save to configfile and reload datafile?")
-            if r:
-                # config_ = Config()
-                # for k, entry in entries.items():
-                #     config_[k] = entry.get()
-                # configlib.save(
-                #     {args.config_section: config_},
-                #     file=args.config_file,
-                #     section=None,
-                #     mode="overwrite")
-                # config_.conv()
-                # data = Data(config_)
-                # data.load()
-                cw.destroy()
+            config = Config()
+            for k, entry in entries.items():
+                config[k] = entry.get()
+            if data.get_config(str_=True) == config:
+                messagebox.showinfo("Config", "Nothing changed.")
+            else:
+                r = messagebox.askyesno("Save config", f"Save to configfile and reload datafile?")
+                if r:
+                    # save
+                    configlib.save(
+                        {args.config_section: config},
+                        file=args.config_file,
+                        section=None,
+                        mode="overwrite",
+                        backup=True)
+                    messagebox.showinfo("Config", "Save completed. Reloding data.")
+
+                    # reload
+                    config.conv()
+                    data._init(config)
+                    data.load()
+                    datasetinfo.reload(data)
+                    cw.destroy()
 
         def _close(event=None):
+            cw.grab_release()
             cw.destroy()
 
         cw = Toplevel()
         cw.title("Config")
         cw.resizable(False, False)
+        cw.grab_set()
         frm = ttk.Frame(cw, padding=20)
         frm.grid()
 
@@ -158,16 +204,17 @@ def main(data: Data, args, config: dict) -> None:
         labels = Labels(frm)
         entries = dict()
 
-        config_ = Config(config)
-        config_.conv_to_str()
-        for k, v in config_.items():
-            # ttk.Label(frm, text=).grid(**gridkw.pull())
+        config = data.get_config(str_=True)
+        for k, v in config.items():
             labels.add(f"{k}: {message.CONFIG[k]}", labelkw, gridkw, name=k)
             entries[k] = Entry(frm, width=50)
             entries[k].insert(END, str(v))
             entries[k].grid(**gridkw.pull())
         buttons.add("Save", _save, gridkw)
         buttons.add("Cancel", _close, gridkw)
+
+        # keybind
+        cw.bind("<Escape>", lambda e: cw.destroy())
 
     data.load()
 
@@ -183,10 +230,14 @@ def main(data: Data, args, config: dict) -> None:
     buttons = Buttons(frm)
     labels = Labels(frm)
 
+    datasetinfo = DatasetInfo()
+    datasetinfo.reload(data)
+
+    labels.add("Dataset info", labelkw.big, gridkw, name="title.dataset", fullspan=True)
     for k in ["datafile", "workdir"]:
-        labels.add(f"{k}: {data.__getattribute__(k).resolve()}", labelkw, gridkw, name=k, fullspan=True)
-    for k in ["all", "annotated"]:
-        labels.add(f"data({k}): {data.count(k)}", labelkw, gridkw, name=k, fullspan=True)
+        labels.add(datasetinfo.get(k), labelkw, gridkw, name=k, fullspan=True)
+    for k in ["count_all", "count_annotated"]:
+        labels.add(datasetinfo.get(k), labelkw, gridkw, name=k, fullspan=True)
 
     labels.add("Annotation", labelkw.big, gridkw, name="title.annotation", fullspan=True)
     buttons.add("[D]eploy", _deploy, gridkw, name="deploy")
@@ -212,5 +263,6 @@ def main(data: Data, args, config: dict) -> None:
     root.bind("r", _register)
     root.bind("o", _open)
     root.bind("q", lambda e: root.destroy())
+    root.bind("<Escape>", lambda e: root.destroy())
 
     root.mainloop()
