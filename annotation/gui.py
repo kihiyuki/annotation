@@ -24,7 +24,7 @@ class LabelKw(dict):
     @property
     def big(self):
         d = self.copy()
-        d["font"] = ("", int(d["font"] * 1.5))
+        d["font"] = ("", int(d["font"][1] * 1.5))
         return d
 
 
@@ -71,18 +71,31 @@ class GridKw(object):
         )
 
 
-class Buttons(object):
+class GridObject(object):
     def __init__(self, frame) -> None:
         self._data = dict()
         self.frame = frame
 
-    def add(self, text: str, command, gridkw, name: str = None):
+    def add(self, object_, gridkw: GridKw, text: str = None, name: str = None, fullspan=False) -> None:
         if name is None:
             name = text
         if name in self._data:
             raise ValueError(f"Name '{name}' is always used")
-        self._data[name] = ttk.Button(self.frame, text=text, command=command)
-        self._data[name].grid(**gridkw.pull())
+        self._data[name] = object_
+        self._data[name].grid(**gridkw.pull(fullspan=fullspan))
+
+
+class Buttons(GridObject):
+    def add(self, text: str, command, gridkw, name: str = None, fullspan=False) -> None:
+        object_ = ttk.Button(self.frame, text=text, command=command)
+        return super().add(object_, gridkw, text, name, fullspan)
+
+
+class Labels(GridObject):
+    def add(self, text: str, labelkw, gridkw, name: str = None, fullspan=False) -> None:
+        object_ = ttk.Label(self.frame, text=text, **labelkw)
+        return super().add(object_, gridkw, text, name, fullspan)
+
 
 def main(data: Data, args, config: dict) -> None:
     def _deploy(event=None):
@@ -137,14 +150,19 @@ def main(data: Data, args, config: dict) -> None:
         cw.resizable(False, False)
         frm = ttk.Frame(cw, padding=20)
         frm.grid()
-        gridkw = GridKw(maxcolumn=1)
-        buttons = Buttons(frm)
 
+        gridkw = GridKw(maxcolumn=1)
+        labelkw = LabelKw(fontsize=10)
+
+        buttons = Buttons(frm)
+        labels = Labels(frm)
         entries = dict()
+
         config_ = Config(config)
         config_.conv_to_str()
         for k, v in config_.items():
-            ttk.Label(frm, text=f"{k}: {message.CONFIG[k]}").grid(**gridkw.pull())
+            # ttk.Label(frm, text=).grid(**gridkw.pull())
+            labels.add(f"{k}: {message.CONFIG[k]}", labelkw, gridkw, name=k)
             entries[k] = Entry(frm, width=50)
             entries[k].insert(END, str(v))
             entries[k].grid(**gridkw.pull())
@@ -161,42 +179,30 @@ def main(data: Data, args, config: dict) -> None:
 
     gridkw = GridKw(maxcolumn=4)
     labelkw = LabelKw()
+
     buttons = Buttons(frm)
+    labels = Labels(frm)
 
-    labels_path = dict()
     for k in ["datafile", "workdir"]:
-        labels_path[k] = ttk.Label(frm, text=f"{k}: {data.__getattribute__(k).resolve()}", **labelkw)
-        labels_path[k].grid(**gridkw.pull(fullspan=True))
+        labels.add(f"{k}: {data.__getattribute__(k).resolve()}", labelkw, gridkw, name=k, fullspan=True)
+    for k in ["all", "annotated"]:
+        labels.add(f"data({k}): {data.count(k)}", labelkw, gridkw, name=k, fullspan=True)
 
-    labels_count = dict()
-    for t in ["all", "annotated"]:
-        labels_count[t] = ttk.Label(frm, text=f"data({t}): {data.count(t)}", **labelkw)
-        labels_count[t].grid(**gridkw.pull(fullspan=True))
-
-    labels_title = dict()
-    labels_title["annotation"] = ttk.Label(frm, text=f"Annotation", **labelkw.big)
-    labels_title["annotation"].grid(**gridkw.pull(fullspan=True))
-
+    labels.add("Annotation", labelkw.big, gridkw, name="title.annotation", fullspan=True)
     buttons.add("[D]eploy", _deploy, gridkw, name="deploy")
     buttons.add("[R]egister", _register, gridkw, name="register")
     gridkw.lf()
 
-    labels_title["workdir"] = ttk.Label(frm, text=f"Working dir", **labelkw.big)
-    labels_title["workdir"].grid(**gridkw.pull(fullspan=True))
-
+    labels.add("Working directory", labelkw.big, gridkw, name="title.workdir", fullspan=True)
     buttons.add("[O]pen", _open, gridkw, name="open")
     buttons.add("Clear", _clear, gridkw, name="clear")
     gridkw.lf()
 
-    labels_title["result"] = ttk.Label(frm, text=f"Result", **labelkw.big)
-    labels_title["result"].grid(**gridkw.pull(fullspan=True))
-
+    labels.add("Result", labelkw.big, gridkw, name="title.result", fullspan=True)
     buttons.add("Deploy", _deploy_result, gridkw, name="deploy_result")
     gridkw.lf()
 
-    labels_title["tail"] = ttk.Label(frm, text=f"----", **labelkw.big)
-    labels_title["tail"].grid(**gridkw.pull(fullspan=True))
-
+    labels.add("----", labelkw.big, gridkw, name="title.tail", fullspan=True)
     buttons.add("Config", _config, gridkw, name="config")
     buttons.add("[Q]uit", root.destroy, gridkw, name="quit")
     gridkw.lf()
