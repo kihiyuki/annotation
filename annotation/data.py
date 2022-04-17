@@ -48,6 +48,11 @@ class Config(dict):
         # list[float]
         for k in ["figsize"]:
             self[k] = [float(x) for x in self[k]]
+        # Path
+        for k in ["datafile"]:
+            self[k] = pathlib.Path(self[k])
+        # _WorkDir
+        self["workdir"] = _WorkDir(self["workdir"])
         # None
         for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
             if self[k] == "":
@@ -103,9 +108,6 @@ class Data(object):
                 self.__setattr__(k, config[k])
             else:
                 self.__setattr__(k, default[k])
-
-        self.datafile = pathlib.Path(self.datafile)
-        self.workdir= _WorkDir(self.workdir)
 
         if self.verbose:
             print(config)
