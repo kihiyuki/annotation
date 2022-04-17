@@ -39,12 +39,18 @@ class Config(dict):
         # bool
         for k in ["random", "backup", "verbose"]:
             self[k] = bool(self[k])
-        # int
+        # int/None
         for k in ["n", "n_example"]:
-            self[k] = int(self[k])
-        # float
+            if self[k] == "":
+                self[k] = None
+            else:
+                self[k] = int(self[k])
+        # float/None
         for k in ["vmin", "vmax"]:
-            self[k] = float(self[k])
+            if self[k] == "":
+                self[k] = None
+            else:
+                self[k] = float(self[k])
         # list(separator=",")
         for k in ["labels", "figsize"]:
             if self[k] == "":
@@ -60,7 +66,7 @@ class Config(dict):
         # _WorkDir
         self["workdir"] = _WorkDir(self["workdir"])
         # None
-        for k in ["n", "n_example", "cmap", "vmin", "vmax"]:
+        for k in ["cmap"]:
             if self[k] == "":
                 self[k] = None
         return None

@@ -4,7 +4,7 @@ from . import gui, message
 from .lib import config as configlib
 from .data import Data, Config, CONFIG_DEFAULT
 
-__version__ = "1.5.1"
+__version__ = "1.5.2"
 
 
 class Arguments(ArgumentParser):

@@ -1,5 +1,4 @@
 import subprocess
-
 from tkinter import (
     Tk,
     ttk,
@@ -153,10 +152,10 @@ def main(data: Data, args) -> None:
     def _deploy_result(event=None):
         r = messagebox.askyesno("Register", f"{message.DEPROYRESULT}?")
         if r:
+            config = data.get_config()
             data.n = 0
             data.n_example = None
             data.deploy()
-            config = data.get_config()
             data.n = config["n"]
             data.n_example = config["n_example"]
 
@@ -177,14 +176,14 @@ def main(data: Data, args) -> None:
                         section=None,
                         mode="overwrite",
                         backup=True)
-                    messagebox.showinfo("Config", "Save completed. Reloding data.")
 
                     # reload
                     config.conv()
                     data._init(config)
+                    cw.destroy()
                     data.load()
                     datasetinfo.reload(data)
-                    cw.destroy()
+                    messagebox.showinfo("Config", "Save and reload completed.")
 
         def _close(event=None):
             cw.grab_release()
