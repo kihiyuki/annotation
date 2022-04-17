@@ -1,5 +1,6 @@
 import shutil
 import pathlib
+from typing import Optional
 from warnings import warn
 
 import pandas as pd
@@ -63,8 +64,14 @@ class Config(dict):
 
 
 class _WorkDir(type(pathlib.Path())):
-    def clear(self, subdirnames: list, verbose=False) -> None:
+    def clear(
+        self,
+        subdirnames: Optional[list] = None,
+        verbose: bool = False
+    ) -> None:
         pathstr = str(self)
+        if subdirnames is None:
+            subdirnames = list()
         if verbose:
             print("clear:", pathstr)
         if self.is_dir():
@@ -93,7 +100,7 @@ class Data(object):
     def __len__(self) -> int:
         return len(self.df)
 
-    def count(self, type="all") -> int:
+    def count(self, type: str = "all") -> int:
         type = type.lower()
         if type.lower() == "all":
             return len(self)
@@ -251,7 +258,11 @@ class Data(object):
         return None
 
     def create_sample_datafile(
-        self, filename="sample.pkl.xz", n=100, backup=None) -> None:
+        self,
+        filename: str = "sample.pkl.xz",
+        n: int = 100,
+        backup: Optional[bool] = None
+    ) -> None:
         filepath = self.datafile.parent / filename
         if backup is None:
             backup = self.backup

@@ -15,6 +15,19 @@ from .lib import config as configlib
 from .data import Data, Config
 
 
+class LabelKw(dict):
+    def __init__(self, fontsize=12):
+        return super().__init__(
+            font = ("", fontsize),
+        )
+
+    @property
+    def big(self):
+        d = self.copy()
+        d["font"] = ("", int(d["font"] * 1.5))
+        return d
+
+
 class GridKw(object):
     def __init__(self, maxcolumn=None, sticky=W) -> None:
         self.row = 0
@@ -34,23 +47,22 @@ class GridKw(object):
         elif self.column >= self.maxcolumn:
             self.lf()
 
-    def set(self, row=None, column=None, fullspan=None):
+    def set(self, row=None, column=None):
         if row is not None:
             self.row = row
         if column is not None:
             self.column = column
-        if (fullspan is not None) and (self.maxcolumn is not None):
-            if fullspan:
-                self.columnspan = self.maxcolumn
-            else:
-                self.columnspan = 1
 
-    def pull(self):
+    def pull(self, fullspan=False):
         row = self.row
         column = self.column
-        columnspan = self.columnspan
         sticky = self.sticky
-        self.next()
+        columnspan = self.columnspan
+        if fullspan:
+            columnspan = self.maxcolumn
+            self.lf()
+        else:
+            self.next()
         return dict(
             row = row,
             column = column,
@@ -58,6 +70,19 @@ class GridKw(object):
             sticky = sticky,
         )
 
+
+class Buttons(object):
+    def __init__(self, frame) -> None:
+        self._data = dict()
+        self.frame = frame
+
+    def add(self, text: str, command, gridkw, name: str = None):
+        if name is None:
+            name = text
+        if name in self._data:
+            raise ValueError(f"Name '{name}' is always used")
+        self._data[name] = ttk.Button(self.frame, text=text, command=command)
+        self._data[name].grid(**gridkw.pull())
 
 def main(data: Data, args, config: dict) -> None:
     def _deploy(event=None):
@@ -72,6 +97,11 @@ def main(data: Data, args, config: dict) -> None:
 
     def _open(event=None):
         subprocess.Popen(["explorer",  data.workdir], shell=True)
+
+    def _clear(event=None):
+        r = messagebox.askyesno("Clear", f"Clear working directory '{data.workdir.resolve()}'?")
+        if r:
+            data.workdir.clear()
 
     def _deploy_result(event=None):
         r = messagebox.askyesno("Register", f"{message.DEPROYRESULT}?")
@@ -108,6 +138,8 @@ def main(data: Data, args, config: dict) -> None:
         frm = ttk.Frame(cw, padding=20)
         frm.grid()
         gridkw = GridKw(maxcolumn=1)
+        buttons = Buttons(frm)
+
         entries = dict()
         config_ = Config(config)
         config_.conv_to_str()
@@ -116,8 +148,8 @@ def main(data: Data, args, config: dict) -> None:
             entries[k] = Entry(frm, width=50)
             entries[k].insert(END, str(v))
             entries[k].grid(**gridkw.pull())
-        ttk.Button(frm, text="Save", command=_save).grid(**gridkw.pull())
-        ttk.Button(frm, text="Cancel", command=_close).grid(**gridkw.pull())
+        buttons.add("Save", _save, gridkw)
+        buttons.add("Cancel", _close, gridkw)
 
     data.load()
 
@@ -127,42 +159,47 @@ def main(data: Data, args, config: dict) -> None:
     frm = ttk.Frame(root, padding=20)
     frm.grid()
 
-    gridkw = GridKw(maxcolumn=2)
-    gridkw.set(fullspan=True)
+    gridkw = GridKw(maxcolumn=4)
+    labelkw = LabelKw()
+    buttons = Buttons(frm)
+
+    labels_path = dict()
     for k in ["datafile", "workdir"]:
-        gridkw.lf()
-        ttk.Label(frm, text=f"{k}: {data.__getattribute__(k)}").grid(**gridkw.pull())
+        labels_path[k] = ttk.Label(frm, text=f"{k}: {data.__getattribute__(k).resolve()}", **labelkw)
+        labels_path[k].grid(**gridkw.pull(fullspan=True))
 
+    labels_count = dict()
     for t in ["all", "annotated"]:
-        gridkw.lf()
-        ttk.Label(frm, text=f"{t}: {data.count(t)}").grid(**gridkw.pull())
+        labels_count[t] = ttk.Label(frm, text=f"data({t}): {data.count(t)}", **labelkw)
+        labels_count[t].grid(**gridkw.pull(fullspan=True))
 
-    gridkw.lf(2)
-    ttk.Label(frm, text=f"--- Annotation ---").grid(**gridkw.pull())
+    labels_title = dict()
+    labels_title["annotation"] = ttk.Label(frm, text=f"Annotation", **labelkw.big)
+    labels_title["annotation"].grid(**gridkw.pull(fullspan=True))
 
-    gridkw.set(fullspan=False)
+    buttons.add("[D]eploy", _deploy, gridkw, name="deploy")
+    buttons.add("[R]egister", _register, gridkw, name="register")
     gridkw.lf()
-    ttk.Button(frm, text="[D]eploy", command=_deploy).grid(**gridkw.pull())
-    ttk.Button(frm, text="[R]egister", command=_register).grid(**gridkw.pull())
+
+    labels_title["workdir"] = ttk.Label(frm, text=f"Working dir", **labelkw.big)
+    labels_title["workdir"].grid(**gridkw.pull(fullspan=True))
+
+    buttons.add("[O]pen", _open, gridkw, name="open")
+    buttons.add("Clear", _clear, gridkw, name="clear")
     gridkw.lf()
-    ttk.Button(frm, text="[O]pen", command=_open).grid(**gridkw.pull())
 
-    gridkw.set(fullspan=True)
-    gridkw.lf(2)
-    ttk.Label(frm, text=f"----- Result -----").grid(**gridkw.pull())
+    labels_title["result"] = ttk.Label(frm, text=f"Result", **labelkw.big)
+    labels_title["result"].grid(**gridkw.pull(fullspan=True))
 
-    gridkw.set(fullspan=False)
+    buttons.add("Deploy", _deploy_result, gridkw, name="deploy_result")
     gridkw.lf()
-    ttk.Button(frm, text="Deploy", command=_deploy_result).grid(**gridkw.pull())
 
-    gridkw.set(fullspan=True)
-    gridkw.lf(2)
-    ttk.Label(frm, text=f"------------------").grid(**gridkw.pull())
+    labels_title["tail"] = ttk.Label(frm, text=f"----", **labelkw.big)
+    labels_title["tail"].grid(**gridkw.pull(fullspan=True))
 
-    gridkw.set(fullspan=False)
+    buttons.add("Config", _config, gridkw, name="config")
+    buttons.add("[Q]uit", root.destroy, gridkw, name="quit")
     gridkw.lf()
-    ttk.Button(frm, text="Config", command=_config).grid(**gridkw.pull())
-    ttk.Button(frm, text="[Q]uit", command=root.destroy).grid(**gridkw.pull())
 
     # keybind
     root.bind("d", _deploy)
