@@ -210,7 +210,7 @@ def main(data: Data, args) -> None:
             entries[k].insert(END, str(v))
             entries[k].grid(**gridkw.pull())
         buttons.add("Save", _save, gridkw)
-        buttons.add("Cancel", _close, gridkw)
+        buttons.add("Cancel[ESC]", _close, gridkw)
 
         # keybind
         cw.bind("<Escape>", lambda e: cw.destroy())
@@ -254,14 +254,13 @@ def main(data: Data, args) -> None:
 
     labels.add("----", labelkw.big, gridkw, name="title.tail", fullspan=True)
     buttons.add("Config", _config, gridkw, name="config")
-    buttons.add("[Q]uit", root.destroy, gridkw, name="quit")
+    buttons.add("Quit[Esc]", root.destroy, gridkw, name="quit")
     gridkw.lf()
 
     # keybind
     root.bind("d", _deploy)
     root.bind("r", _register)
     root.bind("o", _open)
-    root.bind("q", lambda e: root.destroy())
     root.bind("<Escape>", lambda e: root.destroy())
 
     root.mainloop()
