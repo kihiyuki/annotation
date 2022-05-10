@@ -10,35 +10,36 @@
 
 ![](doc/img/dir.png)
 
-## 動作
-
-- Deploy: 画像データが含まれるPickleファイル(DataFrame)をロードし、
-  アノテーション作業ディレクトリを生成する。
-- Register: アノテーション(ディレクトリ振分け)した結果をDataFrameのラベル列に登録し、
-  Pickleファイルに保存する。
-
 ## 使い方
 
+### 基本的な流れ
+
+1. Deploy: 画像データが含まれるPickleファイル(DataFrame)をロードし、
+  アノテーション対象画像とラベル名のディレクトリ、および見本画像を
+  作業ディレクトリに展開する。
+1. アノテーション作業: 作業ディレクトリの画像をラベル名のディレクトリに振り分ける。
+  必要に応じて、新規ラベル(ディレクトリ)を作成する。
+1. Register: アノテーション作業の結果をDataFrameのラベル列に登録し、
+  Pickleファイルに保存する。
+
+### GUIで使う
+
+※Windows
+
+- `annotation.bat` をダブルクリックして実行する。
+- 「Deploy」ボタンまたは「D」キーで、Deploy。
+- 「Open」ボタンまたは「O」キーで作業ディレクトリを開く。
+- 「Register」ボタンまたは「R」キーで、Register。
+
+### コマンドで使う
+
 ```sh
-# 1. アノテーション対象画像を作業ディレクトリにデプロイ
+# Deploy
 python -m annotation -d
 
-# 2. アノテーション作業
-#   * 画像ファイルをラベルディレクトリに振り分ける。
-#   * 新規ラベル(ディレクトリ)を生成してもOK。
-
-# 3. アノテーション結果をdatafile(Pickle)に登録
+# Register
 python -m annotation -r
 ```
-
-または
-
-```sh
-# ウインドウ(GUI)を開く
-python -m annotation -g
-```
-
-### Optional arguments
 
 ```
 optional arguments:
