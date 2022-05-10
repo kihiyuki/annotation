@@ -129,7 +129,15 @@ class Labels(GridObject):
         return super().add(object_, gridkw, text, name, fullspan)
 
 
-def main(data: Data, args) -> None:
+def main(config, args) -> None:
+    try:
+        # Initialize 'Data' class
+        data = Data(config)
+        data.load()
+    except Exception as e:
+        messagebox.showerror("Data Load Error", e)
+        return None
+
     def _deploy(event=None):
         r = messagebox.askyesno("Deploy", f"{message.DEPLOY}?")
         if r:
@@ -214,8 +222,6 @@ def main(data: Data, args) -> None:
 
         # keybind
         cw.bind("<Escape>", lambda e: cw.destroy())
-
-    data.load()
 
     root = Tk()
     root.title("Annotation tool")

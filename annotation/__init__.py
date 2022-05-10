@@ -4,7 +4,7 @@ from . import gui, message
 from .lib import config as configlib
 from .data import Data, Config, CONFIG_DEFAULT
 
-__version__ = "1.5.2"
+__version__ = "1.5.3"
 
 
 class Arguments(ArgumentParser):
@@ -109,15 +109,16 @@ def main(args=None) -> None:
         config["n"] = 0
         config["n_example"] = None
 
+    # GUI
+    if args.gui:
+        gui.main(config=config, args=args)
+        return None
+
     # Initialize 'Data' class
     data = Data(config)
 
     if args.create_sample_datafile:
         data.create_sample_datafile()
-        return None
-
-    if args.gui:
-        gui.main(data=data, args=args)
         return None
 
     if args.deploy and args.register:
