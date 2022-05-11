@@ -141,7 +141,8 @@ def main(config, args) -> None:
     def _register(event=None):
         r = messagebox.askyesno("Register", f"{message.REGISTER}?")
         if r:
-            data.register()
+            n_success, n_failure = data.register()
+            messagebox.showinfo("Register", f"{n_success} registration completed, {n_failure} failed")
             datasetinfo.reload(data)
 
     def _open(event=None):

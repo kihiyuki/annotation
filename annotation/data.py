@@ -261,11 +261,13 @@ class Data(object):
             _saveimgs(df=_df, dirpath=(self.workdir / label))
         return None
 
-    def register(self, save=True, backup=None) -> None:
+    def register(self, save=True, backup=None) -> tuple:
         if not self.loaded:
             warn("Data is not loaded")
             return None
 
+        n_success = 0
+        n_failure = 0
         for labeldir in self.workdir.iterdir():
             if labeldir.is_dir():
                 label = labeldir.name
@@ -281,13 +283,30 @@ class Data(object):
                     idxs = [int(name)]
                 else:
                     idxs = self.df[self.df[self.col_filename]==name].index
+                if len(idxs) == 0:
+                    warn(f"name '{name}' is not found")
+                    n_failure += 1
+                    continue
+
                 if self.verbose:
                     print("data.register: label={} id={} idx={}".format(
                         label, name, list(idxs)))
+                try:
+                    _ = self.df.loc[idxs, self.col_label]
+                except KeyError:
+                    warn(f"KeyError: idxs = {idxs}")
+                    n_failure += 1
+                    continue
+
+                n_success += 1
                 self.df.loc[idxs, self.col_label] = label
+
         if save:
             self.save(backup=backup)
-        return None
+
+        if self.verbose:
+            print(f"data.register: n_success={n_success} n_failure={n_failure}")
+        return (n_success, n_failure)
 
     @staticmethod
     def _save(df, filepath, backup=True, backup_suffix="~", verbose=False) -> None:
