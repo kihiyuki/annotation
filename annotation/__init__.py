@@ -3,8 +3,13 @@ from argparse import ArgumentParser
 from . import gui, message
 from .lib import config as configlib
 from .data import Data, Config, CONFIG_DEFAULT
+from .version import __version__
 
-__version__ = "1.5.3"
+
+__all__ = (
+    "__version__",
+    "main",
+)
 
 
 class Arguments(ArgumentParser):

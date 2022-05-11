@@ -13,6 +13,7 @@ from tkinter import (
 from . import message
 from .lib import config as configlib
 from .data import Data, Config
+from .version import __version__
 
 
 class LabelKw(dict):
@@ -228,7 +229,7 @@ def main(config, args) -> None:
         cw.bind("<Escape>", lambda e: cw.destroy())
 
     root = Tk()
-    root.title("Annotation tool")
+    root.title(f"Annotation tool v{__version__}")
     root.resizable(False, False)
     frm = ttk.Frame(root, padding=20)
     frm.grid()
