@@ -109,11 +109,17 @@ class Data(object):
         return None
 
     def __len__(self) -> int:
-        return len(self.df)
+        if not self.loaded:
+            l = 0
+        else:
+            l = len(self.df)
+        return l
 
     def _init(self, config: dict, default: dict = None) -> None:
         if default is None:
             default = CONFIG_DEFAULT
+        self.loaded = False
+        self.df = pd.DataFrame()
         self.__configkeys = list(default.keys())
         for k in self.__configkeys:
             if k in config:
@@ -135,12 +141,15 @@ class Data(object):
 
     def count(self, type: str = "all") -> int:
         type = type.lower()
-        if type.lower() == "all":
-            return len(self)
+        if not self.loaded:
+            l = 0
+        elif type.lower() == "all":
+            l =  len(self)
         elif type.lower() == "annotated":
-            return (self.df[self.col_label]!=self.label_null).sum()
+            l =  (self.df[self.col_label]!=self.label_null).sum()
         else:
             raise ValueError(f"Type '{type}' is not defined")
+        return l
 
     def load(self) -> None:
         self.df = pd.read_pickle(self.datafile)
@@ -168,6 +177,7 @@ class Data(object):
                     print(f"Label '{label}' found")
                 self.labels.append(label)
 
+        self.loaded = True
         return None
 
     def info(self) -> None:
@@ -182,6 +192,10 @@ class Data(object):
         sample: bool = False,
         head: int = False,
     ) -> pd.DataFrame:
+        if not self.loaded:
+            warn("Data is not loaded")
+            return None
+
         df = self.df
         if label is None:
             _df = df[df[self.col_label]==self.label_null]
@@ -205,6 +219,10 @@ class Data(object):
 
     # TODO: customize figsize
     def deploy(self, figsize=None) -> None:
+        if not self.loaded:
+            warn("Data is not loaded")
+            return None
+
         if figsize is None:
             figsize = self.figsize
 
@@ -244,6 +262,10 @@ class Data(object):
         return None
 
     def register(self, save=True, backup=None) -> None:
+        if not self.loaded:
+            warn("Data is not loaded")
+            return None
+
         for labeldir in self.workdir.iterdir():
             if labeldir.is_dir():
                 label = labeldir.name
@@ -282,6 +304,10 @@ class Data(object):
         return None
 
     def save(self, backup=None) -> None:
+        if not self.loaded:
+            warn("Data is not loaded")
+            return None
+
         if backup is None:
             backup = self.backup
         self._save(

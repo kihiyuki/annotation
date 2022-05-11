@@ -130,13 +130,7 @@ class Labels(GridObject):
 
 
 def main(config, args) -> None:
-    try:
-        # Initialize 'Data' class
-        data = Data(config)
-        data.load()
-    except Exception as e:
-        messagebox.showerror("Data Load Error", e)
-        return None
+    data = Data(config)
 
     def _deploy(event=None):
         r = messagebox.askyesno("Deploy", f"{message.DEPLOY}?")
@@ -167,6 +161,15 @@ def main(config, args) -> None:
             data.n = config["n"]
             data.n_example = config["n_example"]
 
+    def _reload(event=None, config=None):
+        if config is not None:
+            data._init(config)
+        try:
+            data.load()
+        except Exception as e:
+            messagebox.showwarning("Data load failed", e)
+        datasetinfo.reload(data)
+
     def _config(event=None):
         def _save(event=None):
             config = Config()
@@ -187,11 +190,12 @@ def main(config, args) -> None:
 
                     # reload
                     config.conv()
-                    data._init(config)
                     cw.destroy()
-                    data.load()
-                    datasetinfo.reload(data)
-                    messagebox.showinfo("Config", "Save and reload completed.")
+                    _reload(config=config)
+                    if data.loaded:
+                        messagebox.showinfo("Config", "Save and reload completed")
+                    else:
+                        messagebox.showwarning("Config", "Save but reload failed")
 
         def _close(event=None):
             cw.grab_release()
@@ -236,7 +240,7 @@ def main(config, args) -> None:
     labels = Labels(frm)
 
     datasetinfo = DatasetInfo()
-    datasetinfo.reload(data)
+    _reload(config=config)
 
     labels.add("Dataset info", labelkw.big, gridkw, name="title.dataset", fullspan=True)
     for k in ["datafile", "workdir"]:
