@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from typing import Optional, List
 
 from . import gui, message
 from .lib import config as configlib
@@ -12,68 +13,53 @@ __all__ = (
 )
 
 
-class Arguments(ArgumentParser):
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_argument(
-            "--deploy", "-d",
-            action="count", default=0)
-        self.add_argument(
-            "--register", "-r",
-            action="count", default=0)
-        self.add_argument(
-            "--verbose", "-v",
-            action="count", default=0)
-        self.add_argument(
-            "--gui", "-g",
-            action="count", default=0)
-        self.add_argument(
-            "--file", "-f",
-            required=False, default=None,
-            help=message.DATAFILE)
-        self.add_argument(
-            "--workdir", "-w",
-            required=False, default=None,
-            help=message.WORKDIR)
-        self.add_argument(
-            "--config-file",
-            required=False, default="./config.ini",
-            help=message.CONFIGFILE)
-        self.add_argument(
-            "--config-section",
-            required=False, default="annotation",
-            help=message.CONFIGSECTION)
-        self.add_argument(
-            "--deploy-result",
-            action="count", default=0,
-            help=message.DEPROYRESULT)
-        self.add_argument(
-            "--create-config-file",
-            action="count", default=0,
-            help="Create default configuration file")
-        self.add_argument(
-            "--create-sample-datafile",
-            action="count", default=0,
-            help="Create sample datafile (sample.pkl.xz)")
-        return None
+def main(args: Optional[List[str]] = None) -> None:
+    parser = ArgumentParser()
 
-    def parse_args(self, args=None, namespace=None):
-        pargs = super().parse_args(args=args, namespace=namespace)
-        # deploy if deploy-result
-        pargs.deploy += pargs.deploy_result
-        # cast to bool
-        pargs.deploy = bool(pargs.deploy)
-        pargs.register = bool(pargs.register)
-        pargs.gui = bool(pargs.gui)
-        pargs.deploy_result = bool(pargs.deploy_result)
-        pargs.create_config_file = bool(pargs.create_config_file)
-        pargs.create_sample_datafile = bool(pargs.create_sample_datafile)
-        return pargs
+    parser_mode = parser.add_mutually_exclusive_group()
+    parser_mode.add_argument(
+        "--gui", "-g",
+        action="store_true")
+    parser_mode.add_argument(
+        "--deploy", "-d",
+        action="store_true")
+    parser_mode.add_argument(
+        "--register", "-r",
+        action="store_true")
+    parser_mode.add_argument(
+        "--verbose", "-v",
+        action="store_true")
+    parser_mode.add_argument(
+        "--deploy-result",
+        action="store_true",
+        help=message.DEPROYRESULT)
+    parser_mode.add_argument(
+        "--create-config-file",
+        action="store_true",
+        help="Create default configuration file")
+    parser_mode.add_argument(
+        "--create-sample-datafile",
+        action="store_true",
+        help="Create sample datafile (sample.pkl.xz)")
 
+    parser.add_argument(
+        "--file", "-f",
+        required=False, default=None,
+        help=message.DATAFILE)
+    parser.add_argument(
+        "--workdir", "-w",
+        required=False, default=None,
+        help=message.WORKDIR)
+    parser.add_argument(
+        "--config-file",
+        required=False, default="./config.ini",
+        help=message.CONFIGFILE)
+    parser.add_argument(
+        "--config-section",
+        required=False, default="annotation",
+        help=message.CONFIGSECTION)
 
-def main(args=None) -> None:
-    # Parse optional arguments
-    args = Arguments().parse_args(args=args)
+    args = parser.parse_args(args)
 
     # Load configuration file
     kwargs = dict(
