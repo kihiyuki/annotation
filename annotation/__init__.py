@@ -27,9 +27,6 @@ def main(args: Optional[List[str]] = None) -> None:
         "--register", "-r",
         action="store_true")
     parser_mode.add_argument(
-        "--verbose", "-v",
-        action="store_true")
-    parser_mode.add_argument(
         "--deploy-result",
         action="store_true",
         help=message.DEPROYRESULT)
@@ -58,6 +55,9 @@ def main(args: Optional[List[str]] = None) -> None:
         "--config-section",
         required=False, default="annotation",
         help=message.CONFIGSECTION)
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true")
 
     args = parser.parse_args(args)
 
