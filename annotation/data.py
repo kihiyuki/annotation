@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from warnings import warn
 
 import pandas as pd
@@ -68,6 +68,7 @@ class Config(dict):
             self[k] = Path(self[k])
         # _WorkDir
         self["workdir"] = _WorkDir(self["workdir"])
+        self["workdir"].imgext = self["imgext"]
         # None
         for k in ["cmap"]:
             if self[k] == "":
@@ -88,19 +89,31 @@ class Config(dict):
 
 
 class _WorkDir(type(Path())):
+    imgext = ""
+
     def clear(
         self,
-        subdirnames: Optional[list] = None,
+        subdirnames: Optional[List[str]] = None,
+        # imgext: str = "",
         verbose: bool = False
     ) -> None:
-        pathstr = str(self)
+        if not self.is_dir():
+            raise NotADirectoryError()
         if subdirnames is None:
             subdirnames = list()
         if verbose:
-            print("clear:", pathstr)
-        if self.is_dir():
-            shutil.rmtree(pathstr)
-        self.mkdir(exist_ok=False)
+            print("clear:", str(self))
+
+        for filepath in self.glob(f"**/*{self.imgext}"):
+            if filepath.is_file():
+                filepath.unlink()
+        for dirpath in self.glob("*"):
+            if dirpath.is_dir():
+                try:
+                    dirpath.rmdir()
+                except Exception:
+                    pass
+
         for subdirname in subdirnames:
             (self / subdirname).mkdir(exist_ok=False)
         return None
@@ -253,7 +266,7 @@ class Data(object):
                 filepath = dirpath / filename
                 _saveimg(m=row[self.col_img], filepath=str(filepath))
 
-        self.workdir.clear(subdirnames=self.labels)
+        self.workdir.clear(subdirnames=self.labels, verbose=self.verbose)
         _df = self.get_labelled(
             label=None, sample=self.random, head=not self.random, n=self.n)
         _saveimgs(df=_df, dirpath=self.workdir)
