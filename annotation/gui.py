@@ -266,6 +266,7 @@ def main(config, args) -> None:
 
     labels.add("----", labelkw.big, gridkw, name="title.tail", fullspan=True)
     buttons.add("Config", _config, gridkw, name="config")
+    buttons.add("Reload", _reload, gridkw, name="reload")
     buttons.add("Quit[Esc]", root.destroy, gridkw, name="quit")
     gridkw.lf()
 
