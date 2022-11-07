@@ -1,4 +1,5 @@
 import subprocess
+from datetime import datetime
 from tkinter import (
     Tk,
     ttk,
@@ -90,9 +91,10 @@ class StringVars(object):
 
 class DatasetInfo(StringVars):
     def __init__(self) -> None:
-        super().__init__(["datafile", "workdir", "count_all", "count_annotated"])
+        super().__init__(["date", "datafile", "workdir", "count_all", "count_annotated"])
 
     def reload(self, data) -> None:
+        self.set("date", f"Last updated: {datetime.now()}")
         for k in ["datafile", "workdir"]:
             self.set(k, f"{k}: {data.__getattribute__(k).resolve()}")
         for k in ["count_all", "count_annotated"]:
@@ -245,6 +247,7 @@ def main(config, args) -> None:
     _reload(config=config)
 
     labels.add("Dataset info", labelkw.big, gridkw, name="title.dataset", fullspan=True)
+    labels.add(datasetinfo.get("date"), labelkw, gridkw, name="date", fullspan=True)
     for k in ["datafile", "workdir"]:
         labels.add(datasetinfo.get(k), labelkw, gridkw, name=k, fullspan=True)
     for k in ["count_all", "count_annotated"]:
