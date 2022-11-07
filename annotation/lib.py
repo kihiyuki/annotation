@@ -3,7 +3,7 @@ from configparser import ConfigParser, DEFAULTSECT
 from random import choices
 from string import ascii_letters, digits
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
@@ -41,7 +41,7 @@ class config(object):
 
     @staticmethod
     def load(
-        file: str = "./config.ini",
+        file: Union[str, Path] = "./config.ini",
         section: Optional[str] = None,
         encoding: Optional[str] = None,
         notfound_ok: bool = False,
