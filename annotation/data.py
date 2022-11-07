@@ -4,6 +4,7 @@ from typing import Optional
 from warnings import warn
 
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
@@ -11,6 +12,8 @@ import seaborn as sns
 from .cmap import custom_cmaps
 from .lib import random as randomlib
 
+
+matplotlib.use("Agg")
 
 # NOTE: int or float or str
 CONFIG_DEFAULT = dict(
