@@ -269,7 +269,7 @@ def main(config, args) -> None:
 
     labels.add("----", labelkw.big, gridkw, name="title.tail", fullspan=True)
     buttons.add("Config", _config, gridkw, name="config")
-    buttons.add("Reload", _reload, gridkw, name="reload")
+    buttons.add("Reload[F5]", _reload, gridkw, name="reload")
     buttons.add("Quit[Esc]", root.destroy, gridkw, name="quit")
     gridkw.lf()
 
@@ -277,6 +277,7 @@ def main(config, args) -> None:
     root.bind("d", _deploy)
     root.bind("r", _register)
     root.bind("o", _open)
+    root.bind("<F5>", _reload)
     root.bind("<Escape>", lambda e: root.destroy())
 
     root.mainloop()
