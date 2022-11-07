@@ -1,9 +1,10 @@
 import shutil
-import pathlib
+from pathlib import Path
 from typing import Optional
 from warnings import warn
 
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
@@ -11,6 +12,8 @@ import seaborn as sns
 from .cmap import custom_cmaps
 from .lib import random as randomlib
 
+
+matplotlib.use("Agg")
 
 # NOTE: int or float or str
 CONFIG_DEFAULT = dict(
@@ -62,7 +65,7 @@ class Config(dict):
             self[k] = [float(x) for x in self[k]]
         # Path
         for k in ["datafile"]:
-            self[k] = pathlib.Path(self[k])
+            self[k] = Path(self[k])
         # _WorkDir
         self["workdir"] = _WorkDir(self["workdir"])
         # None
@@ -84,7 +87,7 @@ class Config(dict):
         return None
 
 
-class _WorkDir(type(pathlib.Path())):
+class _WorkDir(type(Path())):
     def clear(
         self,
         subdirnames: Optional[list] = None,
@@ -241,7 +244,7 @@ class Data(object):
             plt.clf()
             plt.close()
 
-        def _saveimgs(df, dirpath: pathlib.Path) -> None:
+        def _saveimgs(df, dirpath: Path) -> None:
             for idx, row in df.iterrows():
                 if self._index_as_filename:
                     filename = str(idx) + self.imgext
@@ -310,7 +313,7 @@ class Data(object):
 
     @staticmethod
     def _save(df, filepath, backup=True, backup_suffix="~", verbose=False) -> None:
-        if backup and pathlib.Path(filepath).is_file():
+        if backup and Path(filepath).is_file():
             filepath_str = str(filepath)
             filepath_str_back = filepath_str + backup_suffix
             print("backup:", filepath_str_back)
