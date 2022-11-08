@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Union, Optional, List, Tuple
 from warnings import warn
 
+from tqdm import tqdm
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -286,15 +287,19 @@ class Data(object):
                 _idxs = df.index.sort_values()
             else:
                 _idxs = df.sort_values(self.col_filename).index
+            if len(_idxs) == 0:
+                return None
 
             # draw and save
-            for idx, row in df.loc[_idxs].iterrows():
+            for idx in tqdm(_idxs):
+                row = df.loc[idx]
                 if self._index_as_filename:
                     filename = str(idx) + self.imgext
                 else:
                     filename = str(row[self.col_filename]) + self.imgext
                 filepath = dirpath / filename
                 _saveimg(m=row[self.col_img], filepath=str(filepath))
+            return None
 
         self.workdir.clear(subdirnames=self.labels)
         _df = self.get_labelled(
