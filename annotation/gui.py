@@ -133,13 +133,30 @@ class Labels(GridObject):
         return super().add(object_, gridkw, text, name, fullspan)
 
 
+class ProgressWindow(Toplevel):
+    def __init__(self) -> None:
+        super().__init__()
+        self.title("Please wait...")
+        self.geometry("400x400")
+        self.resizable(False, False)
+        self.grab_set()
+        self.focus_set()
+        self.l = Label(self, text="Please wait...")
+        self.l.pack()
+    def close(self) -> None:
+        self.grab_release()
+        self.destroy()
+
+
 def main(config, args) -> None:
     data = Data(config)
 
     def _deploy(event=None):
         r = messagebox.askyesno("Deploy", f"{message.DEPLOY}?")
         if r:
+            pw = ProgressWindow()
             data.deploy()
+            pw.close()
 
     def _register(event=None):
         r = messagebox.askyesno("Register", f"{message.REGISTER}?")
