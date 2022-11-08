@@ -1,10 +1,11 @@
 import shutil
 from pathlib import Path
-from typing import Optional, List
+from typing import Union, Optional, List, Tuple
 from warnings import warn
 
 import pandas as pd
 import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
@@ -13,10 +14,9 @@ from .cmap import custom_cmaps
 from .lib import random as randomlib
 
 
-matplotlib.use("Agg")
-
-# NOTE: int or float or str
+Figsize = Union[List[Union[int, float]], Tuple[Union[int, float]], float, int]
 CONFIG_DEFAULT = dict(
+    # NOTE: values must be int or float or str
     datafile = "./data.pkl.xz",
     workdir = "./work",
     n = 30,
@@ -69,6 +69,7 @@ class Config(dict):
         # _WorkDir
         self["workdir"] = _WorkDir(self["workdir"])
         self["workdir"].imgext = self["imgext"]
+        self["workdir"].verbose = self["verbose"]
         # None
         for k in ["cmap"]:
             if self[k] == "":
@@ -90,19 +91,20 @@ class Config(dict):
 
 class _WorkDir(type(Path())):
     imgext = ""
+    verbose = False
 
     def clear(
         self,
         subdirnames: Optional[List[str]] = None,
         # imgext: str = "",
-        verbose: bool = False
+        # verbose: bool = False
     ) -> None:
-        if not self.is_dir():
-            raise NotADirectoryError()
         if subdirnames is None:
             subdirnames = list()
-        if verbose:
-            print("clear:", str(self))
+        if self.verbose:
+            print(f"clear: {str(self)}")
+
+        self.mkdir(exist_ok=True, parents=True)
 
         for filepath in self.glob(f"**/*{self.imgext}"):
             if filepath.is_file():
@@ -120,7 +122,11 @@ class _WorkDir(type(Path())):
 
 
 class Data(object):
-    def __init__(self, config: dict = dict(), default: dict = None) -> None:
+    def __init__(
+        self,
+        config: dict = dict(),
+        default: Optional[dict] = None,
+    ) -> None:
         self._init(config=config, default=default)
         return None
 
@@ -131,7 +137,11 @@ class Data(object):
             l = len(self.df)
         return l
 
-    def _init(self, config: dict, default: dict = None) -> None:
+    def _init(
+        self,
+        config: dict = dict(),
+        default: Optional[dict] = None,
+    ) -> None:
         if default is None:
             default = CONFIG_DEFAULT
         self.loaded = False
@@ -147,11 +157,11 @@ class Data(object):
             print(config)
         return None
 
-    def get_config(self, str_=False) -> Config:
+    def get_config(self, str: bool = False) -> Config:
         c = Config()
         for k in self.__configkeys:
             c[k] = self.__getattribute__(k)
-        if str_:
+        if str:
             c.conv_to_str()
         return c
 
@@ -159,9 +169,9 @@ class Data(object):
         type = type.lower()
         if not self.loaded:
             l = 0
-        elif type.lower() == "all":
+        elif type == "all":
             l =  len(self)
-        elif type.lower() == "annotated":
+        elif type == "annotated":
             l =  (self.df[self.col_label]!=self.label_null).sum()
         else:
             raise ValueError(f"Type '{type}' is not defined")
@@ -169,14 +179,16 @@ class Data(object):
 
     def load(self) -> None:
         self.df = pd.read_pickle(self.datafile)
+
         if self.col_label not in self.df.columns:
             self.df[self.col_label] = self.label_null
         else:
             self.df[self.col_label] = self.df[self.col_label].astype(str)
-        if self.verbose:
-            self.info()
 
-        self._index_as_filename =  (self.col_filename == "index") and ("index" not in self.df.columns)
+        if self.verbose:
+            print(self.info())
+
+        self._index_as_filename = (self.col_filename == "index") and ("index" not in self.df.columns)
         if self._index_as_filename:
             print("Column 'index' is not found, use df.index instead")
             nunique = self.df.index.nunique()
@@ -204,9 +216,9 @@ class Data(object):
     def get_labelled(
         self,
         n: int,
-        label: str = None,
+        label: Optional[str] = None,
         sample: bool = False,
-        head: int = False,
+        head: int = 0,
     ) -> pd.DataFrame:
         if not self.loaded:
             warn("Data is not loaded")
@@ -218,12 +230,12 @@ class Data(object):
         else:
             _df =  df[df[self.col_label]==label]
 
-        if sample and head:
+        if sample and (head > 0):
             warn("Both 'sample' and 'head' are selected")
         if n is not None:
             if sample:
                 _df = _df.sample(n=min(n,len(_df)))
-            if head:
+            if head > 0:
                 _df = _df.head(n)
         if self.verbose:
             print("data.get_labelled({}): {}".format(
@@ -233,14 +245,25 @@ class Data(object):
 
         return _df
 
-    # TODO: customize figsize
-    def deploy(self, figsize=None) -> None:
+    def deploy(
+        self,
+        figsize: Optional[Figsize] = None
+    ) -> None:
         if not self.loaded:
             warn("Data is not loaded")
             return None
 
         if figsize is None:
             figsize = self.figsize
+        if type(figsize) in (tuple, list):
+            if len(figsize) == 1:
+                figsize = (figsize[0], figsize[0])
+            elif len(figsize) == 2:
+                pass
+            else:
+                raise ValueError("len(figsize) must be 2")
+        else:  # float or int
+            figsize = (figsize, figsize)
 
         def _saveimg(m, filepath) -> None:
             if self.cmap in custom_cmaps.keys():
@@ -258,7 +281,14 @@ class Data(object):
             plt.close()
 
         def _saveimgs(df, dirpath: Path) -> None:
-            for idx, row in df.iterrows():
+            # sort
+            if self._index_as_filename:
+                _idxs = df.index.sort_values()
+            else:
+                _idxs = df.sort_values(self.col_filename).index
+
+            # draw and save
+            for idx, row in df.loc[_idxs].iterrows():
                 if self._index_as_filename:
                     filename = str(idx) + self.imgext
                 else:
@@ -266,7 +296,7 @@ class Data(object):
                 filepath = dirpath / filename
                 _saveimg(m=row[self.col_img], filepath=str(filepath))
 
-        self.workdir.clear(subdirnames=self.labels, verbose=self.verbose)
+        self.workdir.clear(subdirnames=self.labels)
         _df = self.get_labelled(
             label=None, sample=self.random, head=not self.random, n=self.n)
         _saveimgs(df=_df, dirpath=self.workdir)
@@ -277,7 +307,11 @@ class Data(object):
             _saveimgs(df=_df, dirpath=(self.workdir / label))
         return None
 
-    def register(self, save=True, backup=None) -> tuple:
+    def register(
+        self,
+        save: bool = True,
+        backup=None
+    ) -> tuple:
         if not self.loaded:
             warn("Data is not loaded")
             return None
@@ -325,20 +359,27 @@ class Data(object):
         return (n_success, n_failure)
 
     @staticmethod
-    def _save(df, filepath, backup=True, backup_suffix="~", verbose=False) -> None:
+    def _save(
+        df: pd.DataFrame,
+        filepath: Union[Path, str],
+        backup: bool = True,
+        backup_suffix: str = "~",
+        verbose: bool = False,
+    ) -> None:
         if backup and Path(filepath).is_file():
-            filepath_str = str(filepath)
-            filepath_str_back = filepath_str + backup_suffix
-            print("backup:", filepath_str_back)
-            shutil.copyfile(filepath_str, filepath_str_back)
+            s_filepath = str(filepath)
+            s_filepath_back = s_filepath + backup_suffix
+            if verbose:
+                print(f"backup: {s_filepath_back}")
+            shutil.copyfile(s_filepath, s_filepath_back)
 
         if verbose:
-            print("data.save:", filepath)
+            print(f"data.save: {s_filepath}")
 
         df.to_pickle(filepath)
         return None
 
-    def save(self, backup=None) -> None:
+    def save(self, backup: Optional[bool] = None) -> None:
         if not self.loaded:
             warn("Data is not loaded")
             return None
@@ -348,14 +389,14 @@ class Data(object):
         self._save(
             df=self.df, filepath=str(self.datafile),
             backup=backup, verbose=self.verbose)
-        self.workdir.clear(subdirnames=[], verbose=self.verbose)
+        self.workdir.clear(subdirnames=[])
         return None
 
     def create_sample_datafile(
         self,
         filename: str = "sample.pkl.xz",
         n: int = 100,
-        backup: Optional[bool] = None
+        backup: Optional[bool] = None,
     ) -> None:
         filepath = self.datafile.parent / filename
         if backup is None:
@@ -369,6 +410,9 @@ class Data(object):
         df[self.col_filename] = ids
         df[self.col_img] = list(iter(imgs))
         self._save(
-            df=df, filepath=filepath,
-            backup=backup, verbose=self.verbose)
+            df=df,
+            filepath=filepath,
+            backup=backup,
+            verbose=self.verbose,
+        )
         return None

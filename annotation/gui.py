@@ -5,6 +5,7 @@ from tkinter import (
     ttk,
     messagebox,
     Toplevel,
+    Label,
     Entry,
     StringVar,
     END,
@@ -94,7 +95,7 @@ class DatasetInfo(StringVars):
         super().__init__(["date", "datafile", "workdir", "count_all", "count_annotated"])
 
     def reload(self, data) -> None:
-        self.set("date", f"Last updated: {datetime.now()}")
+        self.set("date", str(datetime.now().replace(microsecond=0)))
         for k in ["datafile", "workdir"]:
             self.set(k, f"{k}: {data.__getattribute__(k).resolve()}")
         for k in ["count_all", "count_annotated"]:
@@ -174,12 +175,16 @@ def main(config, args) -> None:
             messagebox.showwarning("Data load failed", e)
         datasetinfo.reload(data)
 
+    def _close(event=None):
+        root.destroy()
+
     def _config(event=None):
         def _save(event=None):
             config = Config()
             for k, entry in entries.items():
                 config[k] = entry.get()
-            if data.get_config(str_=True) == config:
+            if data.get_config(str=True) == config:
+                _close()
                 messagebox.showinfo("Config", "Nothing changed.")
             else:
                 r = messagebox.askyesno("Save config", f"Save to configfile and reload datafile?")
@@ -194,7 +199,7 @@ def main(config, args) -> None:
 
                     # reload
                     config.conv()
-                    cw.destroy()
+                    _close()
                     _reload(config=config)
                     if data.loaded:
                         messagebox.showinfo("Config", "Save and reload completed")
@@ -209,6 +214,7 @@ def main(config, args) -> None:
         cw.title("Config")
         cw.resizable(False, False)
         cw.grab_set()
+        cw.focus_set()
         frm = ttk.Frame(cw, padding=20)
         frm.grid()
 
@@ -219,17 +225,18 @@ def main(config, args) -> None:
         labels = Labels(frm)
         entries = dict()
 
-        config = data.get_config(str_=True)
+        config = data.get_config(str=True)
         for k, v in config.items():
             labels.add(f"{k}: {message.CONFIG[k]}", labelkw, gridkw, name=k)
             entries[k] = Entry(frm, width=50)
             entries[k].insert(END, str(v))
             entries[k].grid(**gridkw.pull())
-        buttons.add("Save", _save, gridkw)
+        buttons.add("Save[Enter]", _save, gridkw)
         buttons.add("Cancel[ESC]", _close, gridkw)
 
         # keybind
-        cw.bind("<Escape>", lambda e: cw.destroy())
+        cw.bind("<Return>", _save)
+        cw.bind("<Escape>", _close)
 
     root = Tk()
     root.title(f"Annotation tool v{__version__}")
@@ -246,8 +253,8 @@ def main(config, args) -> None:
     datasetinfo = DatasetInfo()
     _reload(config=config)
 
-    labels.add("Dataset info", labelkw.big, gridkw, name="title.dataset", fullspan=True)
     labels.add(datasetinfo.get("date"), labelkw, gridkw, name="date", fullspan=True)
+    labels.add("Dataset info", labelkw.big, gridkw, name="title.dataset", fullspan=True)
     for k in ["datafile", "workdir"]:
         labels.add(datasetinfo.get(k), labelkw, gridkw, name=k, fullspan=True)
     for k in ["count_all", "count_annotated"]:
@@ -270,7 +277,7 @@ def main(config, args) -> None:
     labels.add("----", labelkw.big, gridkw, name="title.tail", fullspan=True)
     buttons.add("Config", _config, gridkw, name="config")
     buttons.add("Reload[F5]", _reload, gridkw, name="reload")
-    buttons.add("Quit[Esc]", root.destroy, gridkw, name="quit")
+    buttons.add("Quit[Esc]", _close, gridkw, name="quit")
     gridkw.lf()
 
     # keybind
@@ -278,6 +285,6 @@ def main(config, args) -> None:
     root.bind("r", _register)
     root.bind("o", _open)
     root.bind("<F5>", _reload)
-    root.bind("<Escape>", lambda e: root.destroy())
+    root.bind("<Escape>", _close)
 
     root.mainloop()
