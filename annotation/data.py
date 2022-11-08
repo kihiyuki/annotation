@@ -67,10 +67,6 @@ class Config(dict):
         # Path
         for k in ["datafile"]:
             self[k] = Path(self[k])
-        # _WorkDir
-        self["workdir"] = _WorkDir(self["workdir"])
-        self["workdir"].imgext = self["imgext"]
-        self["workdir"].verbose = self["verbose"]
         # None
         for k in ["cmap"]:
             if self[k] == "":
@@ -91,34 +87,35 @@ class Config(dict):
 
 
 class _WorkDir(type(Path())):
-    imgext = ""
-    verbose = False
+    imgext: str = ""
+    verbose: bool = False
+    labels: List[str] = list()
 
     def clear(
         self,
-        subdirnames: Optional[List[str]] = None,
-        # imgext: str = "",
-        # verbose: bool = False
+        make_labeldirs: bool = True,
     ) -> None:
-        if subdirnames is None:
-            subdirnames = list()
         if self.verbose:
             print(f"clear: {str(self)}")
 
         self.mkdir(exist_ok=True, parents=True)
 
-        for filepath in self.glob(f"**/*{self.imgext}"):
-            if filepath.is_file():
-                filepath.unlink()
-        for dirpath in self.glob("*"):
+        filepaths = list(self.glob(f"**/*{self.imgext}"))
+        if len(filepaths) > 0:
+            for filepath in tqdm(filepaths):
+                if filepath.is_file():
+                    filepath.unlink()
+        for dirpath in self.iterdir():
             if dirpath.is_dir():
                 try:
                     dirpath.rmdir()
                 except Exception:
                     pass
 
-        for subdirname in subdirnames:
-            (self / subdirname).mkdir(exist_ok=False)
+        # make subdirs
+        if make_labeldirs:
+            for label in self.labels:
+                (self / label).mkdir(exist_ok=False)
         return None
 
 
@@ -154,6 +151,12 @@ class Data(object):
             else:
                 self.__setattr__(k, default[k])
 
+        # init workdir
+        self.workdir = _WorkDir(self.workdir)
+        self.workdir.imgext = self.imgext
+        self.workdir.verbose = self.verbose
+        self.workdir.labels = self.labels
+
         if self.verbose:
             print(config)
         return None
@@ -167,6 +170,10 @@ class Data(object):
         return c
 
     def count(self, type: str = "all") -> int:
+        """
+        Args:
+            type: ['all', 'annotated']
+        """
         type = type.lower()
         if not self.loaded:
             l = 0
@@ -229,7 +236,7 @@ class Data(object):
         if label is None:
             _df = df[df[self.col_label]==self.label_null]
         else:
-            _df =  df[df[self.col_label]==label]
+            _df = df[df[self.col_label]==label]
 
         if sample and (head > 0):
             warn("Both 'sample' and 'head' are selected")
@@ -269,16 +276,18 @@ class Data(object):
         def _saveimg(m, filepath) -> None:
             if self.cmap in custom_cmaps.keys():
                 _cmap = LinearSegmentedColormap.from_list(
-                    **custom_cmaps[self.cmap])
+                    **custom_cmaps[self.cmap]
+                )
             else:
                 _cmap = self.cmap
+
             fig = plt.figure(figsize=figsize)
             ax = fig.add_subplot(111)
             sns.heatmap(
                 m, vmin=self.vmin, vmax=self.vmax, cmap=_cmap,
                 cbar=False, xticklabels=[], yticklabels=[], ax=ax)
-            plt.savefig(filepath)
-            plt.clf()
+            fig.savefig(filepath)
+            fig.clf()
             plt.close()
 
         def _saveimgs(df, dirpath: Path) -> None:
@@ -301,7 +310,7 @@ class Data(object):
                 _saveimg(m=row[self.col_img], filepath=str(filepath))
             return None
 
-        self.workdir.clear(subdirnames=self.labels)
+        self.workdir.clear()
         _df = self.get_labelled(
             label=None, sample=self.random, head=not self.random, n=self.n)
         _saveimgs(df=_df, dirpath=self.workdir)
@@ -315,7 +324,7 @@ class Data(object):
     def register(
         self,
         save: bool = True,
-        backup=None
+        backup: Optional[bool] = None,
     ) -> tuple:
         if not self.loaded:
             warn("Data is not loaded")
@@ -392,9 +401,12 @@ class Data(object):
         if backup is None:
             backup = self.backup
         self._save(
-            df=self.df, filepath=str(self.datafile),
-            backup=backup, verbose=self.verbose)
-        self.workdir.clear(subdirnames=[])
+            df=self.df,
+            filepath=self.datafile,
+            backup=backup,
+            verbose=self.verbose
+        )
+        self.workdir.clear(make_labeldirs=False)
         return None
 
     def create_sample_datafile(

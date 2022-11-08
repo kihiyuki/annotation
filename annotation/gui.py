@@ -5,7 +5,6 @@ from tkinter import (
     ttk,
     messagebox,
     Toplevel,
-    Label,
     Entry,
     StringVar,
     END,
