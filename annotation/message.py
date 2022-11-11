@@ -5,6 +5,7 @@ CONFIGSECTION = "Configuration section name"
 DEPLOY = "Deploy data to working directory"
 REGISTER = "Register annotation results to datafile"
 DEPROYRESULT = "Deploy results (all annotated images)"
+REPLACE = "already exists. Do you want to replace(overwrite) it?"
 
 CONFIG = dict(
     datafile = DATAFILE,
