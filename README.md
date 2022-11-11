@@ -44,26 +44,32 @@ python -m annotation -r
 ```
 optional arguments:
   -h, --help            show this help message and exit
+  --gui, -g
   --deploy, -d
   --register, -r
-  --verbose, -v
-  --gui, -g
-  --file FILE, -f FILE  Pickled pandas.Dataframe file path
+  --deploy-result       Deploy results (all annotated images)
+  --export EXPORT       Export results to a CSV file
+  --create-config-file  Create default configuration file
+  --create-sample-datafile
+                        Create sample datafile (sample.pkl.xz)
+  --file FILE, -f FILE  Pickled pandas.DataFrame file path
   --workdir WORKDIR, -w WORKDIR
                         Working directory path
   --config-file CONFIG_FILE
                         Configuration file path
   --config-section CONFIG_SECTION
                         Configuration section name
-  --deploy-result       Deploy results (all annotated images)
-  --create-config-file  Create default configuration file
-  --create-sample-datafile
-                        Create sample datafile (sample.pkl.xz)
+  --verbose, -v
 ```
 
 ```sh
 # 全てのアノテーション済み画像のみ出力する
 python -m annotation --deploy-result
+```
+
+```sh
+# アノテーション結果をCSVファイルに出力する
+python -m annotation --export result.csv
 ```
 
 ```sh

@@ -177,6 +177,8 @@ def main(config, args) -> None:
                 datetime.now().strftime("%Y%m%d%H%M%S"),
             ),
         )
+        if len(export_file) == 0:
+            return None
         try:
             data.export(filepath=export_file)
         except Exception as e:
