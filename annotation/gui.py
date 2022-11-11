@@ -1,6 +1,6 @@
 import subprocess
+import webbrowser
 from datetime import datetime
-from pathlib import Path
 from tkinter import (
     Tk,
     ttk,
@@ -17,6 +17,10 @@ from . import message
 from .lib import config as configlib
 from .data import Data, Config
 from .version import __version__
+
+
+APPNAME = f"Annotation tool v{__version__}"
+URL = "https://github.com/kihiyuki/annotation/"
 
 
 class LabelKw(dict):
@@ -195,6 +199,34 @@ def main(config, args) -> None:
             messagebox.showwarning("Data load failed", e)
         datasetinfo.reload(data)
 
+    def _about(event=None):
+        def _close(event=None):
+            aw.grab_release()
+            aw.destroy()
+
+        def _github(event=None):
+            webbrowser.open_new(URL)
+
+        aw = Toplevel()
+        aw.title("About")
+        aw.resizable(False, False)
+        aw.grab_set()
+        aw.focus_set()
+        frm = ttk.Frame(aw, padding=20)
+        frm.grid()
+
+        gridkw = GridKw(maxcolumn=1)
+        labelkw = LabelKw()
+
+        buttons = Buttons(frm)
+        labels = Labels(frm)
+
+        labels.add(APPNAME, labelkw.big, gridkw, name="APPNAME")
+        labels.add(URL, labelkw, gridkw, name="URL")
+
+        buttons.add("GitHub", _github, gridkw)
+        buttons.add("Close", _close, gridkw)
+
     def _close(event=None):
         root.destroy()
 
@@ -259,7 +291,7 @@ def main(config, args) -> None:
         cw.bind("<Escape>", _close)
 
     root = Tk()
-    root.title(f"Annotation tool v{__version__}")
+    root.title(APPNAME)
     root.resizable(False, False)
     frm = ttk.Frame(root, padding=20)
     frm.grid()
@@ -305,6 +337,7 @@ def main(config, args) -> None:
     root.bind("d", _deploy)
     root.bind("r", _register)
     root.bind("o", _open)
+    root.bind("<F1>", _about)
     root.bind("<F5>", _reload)
     root.bind("<Escape>", _close)
 
