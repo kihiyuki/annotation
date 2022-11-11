@@ -1,8 +1,10 @@
 import subprocess
 from datetime import datetime
+from pathlib import Path
 from tkinter import (
     Tk,
     ttk,
+    filedialog,
     messagebox,
     Toplevel,
     Entry,
@@ -165,6 +167,23 @@ def main(config, args) -> None:
             data.n = config["n"]
             data.n_example = config["n_example"]
 
+    def _export(event=None):
+        export_file = filedialog.asksaveasfilename(
+            filetypes = [("CSV file", ".csv")],
+            defaultextension = "csv",
+            title="Export",
+            initialfile = "{}_{}.csv".format(
+                data.datafile.name,
+                datetime.now().strftime("%Y%m%d%H%M%S"),
+            ),
+        )
+        try:
+            data.export(filepath=export_file)
+        except Exception as e:
+            messagebox.showwarning("Export failed", e)
+        else:
+            messagebox.showinfo("Export", f"Successfully saved.")
+
     def _reload(event=None, config=None):
         if config is not None:
             data._init(config)
@@ -271,6 +290,7 @@ def main(config, args) -> None:
 
     labels.add("Result", labelkw.big, gridkw, name="title.result", fullspan=True)
     buttons.add("Deploy", _deploy_result, gridkw, name="deploy_result")
+    buttons.add("Export", _export, gridkw, name="export")
     gridkw.lf()
 
     labels.add("----", labelkw.big, gridkw, name="title.tail", fullspan=True)

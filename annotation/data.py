@@ -273,7 +273,7 @@ class Data(object):
         else:  # float or int
             figsize = (figsize, figsize)
 
-        def _saveimg(m, filepath) -> None:
+        def _save_img(m, filepath) -> None:
             if self.cmap in custom_cmaps.keys():
                 _cmap = LinearSegmentedColormap.from_list(
                     **custom_cmaps[self.cmap]
@@ -290,7 +290,7 @@ class Data(object):
             fig.clf()
             plt.close()
 
-        def _saveimgs(df, dirpath: Path) -> None:
+        def _save_imgs(df, dirpath: Path) -> None:
             # sort
             if self._index_as_filename:
                 _idxs = df.index.sort_values()
@@ -307,18 +307,18 @@ class Data(object):
                 else:
                     filename = str(row[self.col_filename]) + self.imgext
                 filepath = dirpath / filename
-                _saveimg(m=row[self.col_img], filepath=str(filepath))
+                _save_img(m=row[self.col_img], filepath=str(filepath))
             return None
 
         self.workdir.clear()
         _df = self.get_labelled(
             label=None, sample=self.random, head=not self.random, n=self.n)
-        _saveimgs(df=_df, dirpath=self.workdir)
+        _save_imgs(df=_df, dirpath=self.workdir)
         # Examples
         for label in self.labels:
             _df = self.get_labelled(
                 label=label, sample=True, n=self.n_example)
-            _saveimgs(df=_df, dirpath=(self.workdir / label))
+            _save_imgs(df=_df, dirpath=(self.workdir / label))
         return None
 
     def register(
@@ -372,8 +372,29 @@ class Data(object):
             print(f"data.register: n_success={n_success} n_failure={n_failure}")
         return (n_success, n_failure)
 
+    def export(
+        self,
+        filepath: Union[Path, str],
+        filetype: str = "csv",
+        verbose: bool = False,
+    ) -> None:
+        _df = pd.DataFrame(index=self.df.index)
+        if self._index_as_filename:
+            _df["id"] = self.df.index
+        else:
+            _df["id"] = self.df[self.col_filename]
+        _df["label"] = self.df[self.col_label]
+
+        if filetype == "csv":
+            _df.to_csv(filepath, index=True)
+        else:
+            raise ValueError("filetype must be in ['csv']")
+        if verbose:
+            print(f"data.export: {filepath}")
+        return None
+
     @staticmethod
-    def _save(
+    def _save_pickle(
         df: pd.DataFrame,
         filepath: Union[Path, str],
         backup: bool = True,
@@ -400,7 +421,7 @@ class Data(object):
 
         if backup is None:
             backup = self.backup
-        self._save(
+        self._save_pickle(
             df=self.df,
             filepath=self.datafile,
             backup=backup,
@@ -426,7 +447,7 @@ class Data(object):
         df = pd.DataFrame()
         df[self.col_filename] = ids
         df[self.col_img] = list(iter(imgs))
-        self._save(
+        self._save_pickle(
             df=df,
             filepath=filepath,
             backup=backup,
