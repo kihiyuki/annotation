@@ -401,8 +401,8 @@ class Data(object):
         backup_suffix: str = "~",
         verbose: bool = False,
     ) -> None:
+        s_filepath = str(filepath)
         if backup and Path(filepath).is_file():
-            s_filepath = str(filepath)
             s_filepath_back = s_filepath + backup_suffix
             if verbose:
                 print(f"backup: {s_filepath_back}")
