@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from typing import Optional, List
+from pathlib import Path
 
 from . import gui, message
 from .lib import config as configlib
@@ -30,6 +31,10 @@ def main(args: Optional[List[str]] = None) -> None:
         "--deploy-result",
         action="store_true",
         help=message.DEPROYRESULT)
+    parser_mode.add_argument(
+        "--export",
+        required=False, default=None,
+        help="Export results to a CSV file")
     parser_mode.add_argument(
         "--create-config-file",
         action="store_true",
@@ -112,15 +117,21 @@ def main(args: Optional[List[str]] = None) -> None:
         data.create_sample_datafile()
         return None
 
-    if args.deploy and args.register:
-        raise Exception("Both '--deploy' and '--register' are active")
-
     # Load pickle datafile
     data.load()
 
-    if args.deploy:
+    if args.deploy or args.deploy_result:
         data.deploy()
     elif args.register:
         data.register()
+    elif args.export is not None:
+        export_file = args.export
+        _export = True
+        if Path(export_file).is_file():
+            r = input(f"{export_file} {message.REPLACE} (y/n)")
+            if r.lower() not in ["y", "yes"]:
+                _export = False
+        if _export:
+            data.export(export_file)
 
     return None

@@ -376,7 +376,6 @@ class Data(object):
         self,
         filepath: Union[Path, str],
         filetype: str = "csv",
-        verbose: bool = False,
     ) -> None:
         _df = pd.DataFrame(index=self.df.index)
         if self._index_as_filename:
@@ -389,7 +388,7 @@ class Data(object):
             _df.to_csv(filepath, index=True)
         else:
             raise ValueError("filetype must be in ['csv']")
-        if verbose:
+        if self.verbose:
             print(f"data.export: {filepath}")
         return None
 
