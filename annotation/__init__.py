@@ -2,7 +2,8 @@ from argparse import ArgumentParser
 from typing import Optional, List
 from pathlib import Path
 
-from . import gui, message
+from .gui import main as gui_main
+from .messages import messages, option_messages
 from .lib import config as configlib
 from .data import Data, Config, CONFIG_DEFAULT
 from .version import __version__
@@ -30,7 +31,7 @@ def main(args: Optional[List[str]] = None) -> None:
     parser_mode.add_argument(
         "--deploy-result",
         action="store_true",
-        help=message.DEPROYRESULT)
+        help=option_messages.deployresult)
     parser_mode.add_argument(
         "--export",
         required=False, default=None,
@@ -47,19 +48,19 @@ def main(args: Optional[List[str]] = None) -> None:
     parser.add_argument(
         "--file", "-f",
         required=False, default=None,
-        help=message.DATAFILE)
+        help=option_messages.datafile)
     parser.add_argument(
         "--workdir", "-w",
         required=False, default=None,
-        help=message.WORKDIR)
+        help=option_messages.workdir)
     parser.add_argument(
         "--config-file",
         required=False, default="./config.ini",
-        help=message.CONFIGFILE)
+        help=option_messages.configfile)
     parser.add_argument(
         "--config-section",
         required=False, default="annotation",
-        help=message.CONFIGSECTION)
+        help=option_messages.configsection)
     parser.add_argument(
         "--verbose", "-v",
         action="store_true")
@@ -128,7 +129,7 @@ def main(args: Optional[List[str]] = None) -> None:
         export_file = args.export
         _export = True
         if Path(export_file).is_file():
-            r = input(f"{export_file} {message.REPLACE} (y/n)")
+            r = input(f"{export_file} {messages.replace} (y/n)")
             if r.lower() not in ["y", "yes"]:
                 _export = False
         if _export:

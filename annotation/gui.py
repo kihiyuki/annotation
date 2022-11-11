@@ -13,7 +13,7 @@ from tkinter import (
     W,
 )
 
-from . import message
+from .messages import option_messages, config_messages
 from .lib import config as configlib
 from .data import Data, Config
 from .version import __version__
@@ -142,12 +142,12 @@ def main(config, args) -> None:
     data = Data(config)
 
     def _deploy(event=None):
-        r = messagebox.askyesno("Deploy", f"{message.DEPLOY}?")
+        r = messagebox.askyesno("Deploy", f"{option_messages.deploy}?")
         if r:
             data.deploy()
 
     def _register(event=None):
-        r = messagebox.askyesno("Register", f"{message.REGISTER}?")
+        r = messagebox.askyesno("Register", f"{option_messages.register}?")
         if r:
             n_success, n_failure = data.register()
             messagebox.showinfo("Register", f"{n_success} registration completed, {n_failure} failed")
@@ -162,7 +162,7 @@ def main(config, args) -> None:
             data.workdir.clear()
 
     def _deploy_result(event=None):
-        r = messagebox.askyesno("Register", f"{message.DEPROYRESULT}?")
+        r = messagebox.askyesno("Register", f"{option_messages.deployresult}?")
         if r:
             config = data.get_config()
             data.n = 0
@@ -279,7 +279,7 @@ def main(config, args) -> None:
 
         config = data.get_config(str=True)
         for k, v in config.items():
-            labels.add(f"{k}: {message.CONFIG[k]}", labelkw, gridkw, name=k)
+            labels.add(f"{k}: {config_messages.__getattribute__(k)}", labelkw, gridkw, name=k)
             entries[k] = Entry(frm, width=50)
             entries[k].insert(END, str(v))
             entries[k].grid(**gridkw.pull())
