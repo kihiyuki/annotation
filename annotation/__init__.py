@@ -108,7 +108,7 @@ def main(args: Optional[List[str]] = None) -> None:
 
     # GUI
     if args.gui:
-        gui.main(config=config, args=args)
+        gui_main(config=config, args=args)
         return None
 
     # Initialize 'Data' class
