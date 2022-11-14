@@ -1,6 +1,6 @@
 import subprocess
+import webbrowser
 from datetime import datetime
-from pathlib import Path
 from tkinter import (
     Tk,
     ttk,
@@ -13,10 +13,14 @@ from tkinter import (
     W,
 )
 
-from . import message
+from .messages import option_messages, config_messages
 from .lib import config as configlib
 from .data import Data, Config
 from .version import __version__
+
+
+APPNAME = f"Annotation tool v{__version__}"
+URL = "https://github.com/kihiyuki/annotation/"
 
 
 class LabelKw(dict):
@@ -134,16 +138,111 @@ class Labels(GridObject):
         return super().add(object_, gridkw, text, name, fullspan)
 
 
+class SubWindow(Toplevel):
+    def __init__(
+        self,
+        title: str = "",
+        resizable: bool = False,
+        padding: int = 20,
+        maxcolumn: int = 1,
+        fontsize: int = 12,
+    ) -> None:
+        ret = super().__init__()
+
+        self.title(title)
+        self.resizable(resizable, resizable)
+        self.grab_set()
+        self.focus_set()
+
+        self.frm = ttk.Frame(self, padding=padding)
+        self.frm.grid()
+
+        self.gridkw = GridKw(maxcolumn=maxcolumn)
+        self.labelkw = LabelKw(fontsize=fontsize)
+
+        self.buttons = Buttons(self.frm)
+        self.labels = Labels(self.frm)
+
+        return ret
+
+    def close(self, event=None) -> None:
+        self.grab_release()
+        self.destroy()
+        return None
+
+
 def main(config, args) -> None:
     data = Data(config)
 
+    class AboutWindow(SubWindow):
+        def __init__(self) -> None:
+            ret = super().__init__(title="About")
+
+            self.labels.add(APPNAME, self.labelkw.big, self.gridkw, name="APPNAME")
+            self.labels.add(URL, self.labelkw, self.gridkw, name="URL")
+
+            self.buttons.add("GitHub", self.open_github, self.gridkw)
+            self.buttons.add("Close", self.close, self.gridkw)
+
+            return ret
+
+        def open_github(event=None) -> None:
+            webbrowser.open_new(URL)
+            return None
+
+    class ConfigWindow(SubWindow):
+        def __init__(self) -> None:
+            ret = super().__init__(title="Config", fontsize=10)
+
+            self.entries = dict()
+
+            config = data.get_config(str=True)
+            for k, v in config.items():
+                self.labels.add(f"{k}: {config_messages.__getattribute__(k)}", self.labelkw, self.gridkw, name=k)
+                self.entries[k] = Entry(self.frm, width=50)
+                self.entries[k].insert(END, str(v))
+                self.entries[k].grid(**self.gridkw.pull())
+            self.buttons.add("Save[Enter]", self.save, self.gridkw)
+            self.buttons.add("Cancel[ESC]", self.close, self.gridkw)
+
+            # keybind
+            self.bind("<Return>", self.save)
+            self.bind("<Escape>", self.close)
+
+            return ret
+
+        def save(self, event=None) -> None:
+            config = Config()
+            for k, entry in self.entries.items():
+                config[k] = entry.get()
+            if data.get_config(str=True) == config:
+                self.close()
+                messagebox.showinfo("Config", "Nothing changed.")
+            else:
+                r = messagebox.askyesno("Save config", f"Save to configfile and reload datafile?")
+                if r:
+                    # save
+                    configlib.save(
+                        {args.config_section: config},
+                        file=args.config_file,
+                        section=None,
+                        mode="overwrite",
+                        backup=True)
+
+                    # reload
+                    config.conv()
+                    self.close()
+                    _reload(config=config)
+                    messagebox.showinfo("Config", "Saved.")
+            return None
+
     def _deploy(event=None):
-        r = messagebox.askyesno("Deploy", f"{message.DEPLOY}?")
+        r = messagebox.askyesno("Deploy", f"{option_messages.deploy}?")
         if r:
             data.deploy()
 
     def _register(event=None):
-        r = messagebox.askyesno("Register", f"{message.REGISTER}?")
+        r = messagebox.askyesno("Register", f"{option_messages.register}?")
         if r:
             n_success, n_failure = data.register()
             messagebox.showinfo("Register", f"{n_success} registration completed, {n_failure} failed")
@@ -158,7 +257,7 @@ def main(config, args) -> None:
             data.workdir.clear()
 
     def _deploy_result(event=None):
-        r = messagebox.askyesno("Register", f"{message.DEPROYRESULT}?")
+        r = messagebox.askyesno("Register", f"{option_messages.deployresult}?")
         if r:
             config = data.get_config()
             data.n = 0
@@ -195,71 +294,17 @@ def main(config, args) -> None:
             messagebox.showwarning("Data load failed", e)
         datasetinfo.reload(data)
 
+    def _about(event=None):
+        aw = AboutWindow()
+
     def _close(event=None):
         root.destroy()
 
     def _config(event=None):
-        def _save(event=None):
-            config = Config()
-            for k, entry in entries.items():
-                config[k] = entry.get()
-            if data.get_config(str=True) == config:
-                _close()
-                messagebox.showinfo("Config", "Nothing changed.")
-            else:
-                r = messagebox.askyesno("Save config", f"Save to configfile and reload datafile?")
-                if r:
-                    # save
-                    configlib.save(
-                        {args.config_section: config},
-                        file=args.config_file,
-                        section=None,
-                        mode="overwrite",
-                        backup=True)
-
-                    # reload
-                    config.conv()
-                    _close()
-                    _reload(config=config)
-                    if data.loaded:
-                        messagebox.showinfo("Config", "Save and reload completed")
-                    else:
-                        messagebox.showwarning("Config", "Save but reload failed")
-
-        def _close(event=None):
-            cw.grab_release()
-            cw.destroy()
-
-        cw = Toplevel()
-        cw.title("Config")
-        cw.resizable(False, False)
-        cw.grab_set()
-        cw.focus_set()
-        frm = ttk.Frame(cw, padding=20)
-        frm.grid()
-
-        gridkw = GridKw(maxcolumn=1)
-        labelkw = LabelKw(fontsize=10)
-
-        buttons = Buttons(frm)
-        labels = Labels(frm)
-        entries = dict()
-
-        config = data.get_config(str=True)
-        for k, v in config.items():
-            labels.add(f"{k}: {message.CONFIG[k]}", labelkw, gridkw, name=k)
-            entries[k] = Entry(frm, width=50)
-            entries[k].insert(END, str(v))
-            entries[k].grid(**gridkw.pull())
-        buttons.add("Save[Enter]", _save, gridkw)
-        buttons.add("Cancel[ESC]", _close, gridkw)
-
-        # keybind
-        cw.bind("<Return>", _save)
-        cw.bind("<Escape>", _close)
+        cw = ConfigWindow()
 
     root = Tk()
-    root.title(f"Annotation tool v{__version__}")
+    root.title(APPNAME)
     root.resizable(False, False)
     frm = ttk.Frame(root, padding=20)
     frm.grid()
@@ -305,6 +350,7 @@ def main(config, args) -> None:
     root.bind("d", _deploy)
     root.bind("r", _register)
     root.bind("o", _open)
+    root.bind("<F1>", _about)
     root.bind("<F5>", _reload)
     root.bind("<Escape>", _close)
 
