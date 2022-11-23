@@ -1,4 +1,5 @@
 import shutil
+import json
 from pathlib import Path
 from typing import Union, Optional, List, Tuple
 from warnings import warn
@@ -11,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 
-from .cmap import custom_cmaps
+from . import cmap
 from .lib import random as randomlib
 
 
@@ -20,6 +21,7 @@ CONFIG_DEFAULT = dict(
     # NOTE: values must be int or float or str
     datafile = "./data.pkl.xz",
     workdir = "./work",
+    cmapfile = "",
     n = 30,
     n_example = 5,
     col_filename = "id",
@@ -40,37 +42,35 @@ CONFIG_DEFAULT = dict(
 
 class Config(dict):
     def conv(self) -> None:
-        # bool
-        for k in ["random", "backup", "verbose"]:
-            self[k] = bool(self[k])
-        # int/None
-        for k in ["n", "n_example"]:
-            if self[k] == "":
-                self[k] = None
+        for k in self.keys():
+            # Optional
+            if k in ["cmapfile", "cmap", "n", "n_example", "vmin", "vmax"]:
+                if self[k] == "":
+                    self[k] = None
+            if self[k] is None:
+                pass
             else:
-                self[k] = int(self[k])
-        # float/None
-        for k in ["vmin", "vmax"]:
-            if self[k] == "":
-                self[k] = None
-            else:
-                self[k] = float(self[k])
-        # list(separator=",")
-        for k in ["labels", "figsize"]:
-            if self[k] == "":
-                self[k] = list()
-            else:
-                self[k] = self[k].split(",")
-        # list[float]
-        for k in ["figsize"]:
-            self[k] = [float(x) for x in self[k]]
-        # Path
-        for k in ["datafile"]:
-            self[k] = Path(self[k])
-        # None
-        for k in ["cmap"]:
-            if self[k] == "":
-                self[k] = None
+                # bool
+                if k in ["random", "backup", "verbose"]:
+                    self[k] = bool(self[k])
+                # int
+                if k in ["n", "n_example"]:
+                    self[k] = int(self[k])
+                # float
+                if k in ["vmin", "vmax"]:
+                    self[k] = float(self[k])
+                # list(separator=",")
+                if k in ["labels", "figsize"]:
+                    if self[k] == "":
+                        self[k] = list()
+                    else:
+                        self[k] = self[k].split(",")
+                # list[float]
+                if k in ["figsize"]:
+                    self[k] = [float(x) for x in self[k]]
+                # Path
+                if k in ["cmapfile", "datafile"]:
+                    self[k] = Path(self[k])
         return None
 
     def conv_to_str(self) -> None:
@@ -144,6 +144,7 @@ class Data(object):
             default = CONFIG_DEFAULT
         self.loaded = False
         self.df = pd.DataFrame()
+        self.cmaps: dict
         self.__configkeys = list(default.keys())
         for k in self.__configkeys:
             if k in config:
@@ -213,6 +214,18 @@ class Data(object):
                     print(f"Label '{label}' found")
                 self.labels.append(label)
 
+        self.cmaps = cmap.custom_cmaps
+        if self.cmapfile is None:
+            _cmaps_json = dict()
+        else:
+            try:
+                with Path(self.cmapfile).open(mode="r") as f:
+                    _cmaps_json = json.load(f)
+            except Exception as e:
+                print(f"Warning: loading cmapfile '{self.cmapfile}' failed.")
+                _cmaps_json = dict()
+        self.cmaps.update(cmap.conv(_cmaps_json))
+
         self.loaded = True
         return None
 
@@ -274,9 +287,9 @@ class Data(object):
             figsize = (figsize, figsize)
 
         def _save_img(m, filepath) -> None:
-            if self.cmap in custom_cmaps.keys():
+            if self.cmap in self.cmaps.keys():
                 _cmap = LinearSegmentedColormap.from_list(
-                    **custom_cmaps[self.cmap]
+                    **self.cmaps[self.cmap]
                 )
             else:
                 _cmap = self.cmap

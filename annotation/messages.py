@@ -12,6 +12,7 @@ messages = __Messages()
 class __OptionMessages(object):
     datafile: str = "Pickled pandas.DataFrame file path"
     workdir: str = "Working directory path"
+    cmapfile: str = "Custom matplotlib.cmap file (JSON)"
     configfile: str = "Configuration file path"
     configsection: str = "Configuration section name"
     deploy: str = "Deploy data to working directory"
@@ -26,6 +27,7 @@ option_messages = __OptionMessages()
 class __ConfigMessages(object):
     datafile: str = option_messages.datafile
     workdir: str = option_messages.workdir
+    cmapfile: str = option_messages.cmapfile
     n: str = "Number of images to annotate at once (If null, deploy all images.)"
     n_example: str = "Number of example images of each label(If null, deploy all images.)"
     col_filename: str = "Column name for image-file name ('index' to use df.index if 'index' not in df.columns)"

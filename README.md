@@ -1,4 +1,4 @@
-# Annotation tool for WM811K-like dataset
+# Annotation tool for WM-811K-like dataset
 
 - WM-811Kライクなデータセット
   (1チャンネル2次元の画像(numpy.ndarray)を含む、DataFrameのPickleファイル)
@@ -58,10 +58,12 @@ optional arguments:
                         Working directory path
   --config-file CONFIG_FILE
                         Configuration file path
+  --cmap-file CMAP_FILE
+                        Custom matplotlib.cmap file (JSON)
   --config-section CONFIG_SECTION
                         Configuration section name
   --verbose, -v
-  --version, -V
+  --version, -V         show program's version number and exit
 ```
 
 ```sh
@@ -87,7 +89,7 @@ python -m annotation --create-sample-datafile
 - 1枚の画像に対し付与できるラベルは1つだけです。
 - 新規ディレクトリを作成すれば、それが新規ラベルになります。
 - 空文字列をラベルとして使うことはできません。
-- 自作カラーマップを使用できます。 -> [cmap.py](#cmappy)
+- [自作カラーマップ](#自作カラーマップ) を定義できます。
 - deploy/registerの度に、
   workdir (デフォルトでは `./work`) を
   `shutil.rmtree(workdir)` で空にします。
@@ -143,6 +145,9 @@ python -m annotation --create-config-file
 datafile = ./data.pkl.xz
 ; Working directory path
 workdir = ./work
+; custom colormap
+; (nullable)
+cmapfile =
 ; Number of images to annotate at once
 ; (nullable) If null, deploy all images.
 n = 30
@@ -165,8 +170,8 @@ label_null =
 random = 1
 ; Image file extension
 imgext = .png
-; matplotlib.cmap (you can use custom cmap name in cmap.py)
-; (nullable) If null, use default cmap of seaboarn.heatmap.
+; colormap name
+; (nullable) If null, use seaboarn.heatmap-default cmap.
 cmap = 
 ; seaborn.heatmap.vmin
 ; (nullable) If null, determined automatically.
@@ -202,11 +207,12 @@ vmax =
 
 ![](doc/img/dir_wm811k.png)
 
-## cmap.py
+## 自作カラーマップ
 
-[cmap.py](annotation/cmap.py)
-
-自作カラーマップを定義できます。
+- カスタムマップを定義する方法は2種類あります。
+  - (推奨)JSONファイルにカラーマップ定義を記入する。
+    (サンプル: [cmap_sample.json](doc/cmap_sample.json))
+  - [cmap.py](annotation/cmap.py) に直接記入しても構いません。
 
 ## LICENSE
 

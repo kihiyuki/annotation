@@ -58,6 +58,10 @@ def main(args: Optional[List[str]] = None) -> None:
         required=False, default="./config.ini",
         help=option_messages.configfile)
     parser.add_argument(
+        "--cmap-file",
+        required=False, default=None,
+        help=option_messages.cmapfile)
+    parser.add_argument(
         "--config-section",
         required=False, default="annotation",
         help=option_messages.configsection)
@@ -93,6 +97,8 @@ def main(args: Optional[List[str]] = None) -> None:
         config["datafile"] = args.file
     if args.workdir is not None:
         config["workdir"] = args.workdir
+    if args.cmap_file is not None:
+        config["cmapfile"] = args.cmap_file
     config.conv()
     config["verbose"] = bool(config["verbose"] + args.verbose)
 

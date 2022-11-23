@@ -7,21 +7,25 @@ https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.LinearSegmentedColor
 """
 
 _custom_cmaps = [
-    dict(
-        name = "custom1",
-        colors = ["#0000ff","#00ff00","#ff0000"],
-        # N = 256,
-        # gamma = 1.0,
-    ),
-    dict(
-        name = "custom2",
-        colors = ["#ff0000","#ff0000","#00ff00"],
-        # N = 256,
-        # gamma = 1.0,
-    ),
+    # dict(
+    #     name = "custom1",
+    #     colors = ["#0000ff","#00ff00","#ff0000"],
+    #     # N = 256,
+    #     # gamma = 1.0,
+    # ),
+    # dict(
+    #     name = "custom2",
+    #     colors = ["#ff0000","#ff0000","#00ff00"],
+    #     # N = 256,
+    #     # gamma = 1.0,
+    # ),
 ]
 
-custom_cmaps = dict()
-for cmap in _custom_cmaps:
-    name = cmap["name"]
-    custom_cmaps[name] = cmap.copy()
+def conv(cmaps_list: list) -> dict:
+    _cmaps = dict()
+    for cmap in cmaps_list:
+        name = cmap["name"]
+        _cmaps[name] = cmap.copy()
+    return _cmaps
+
+custom_cmaps = conv(_custom_cmaps)
