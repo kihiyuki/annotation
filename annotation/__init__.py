@@ -64,6 +64,10 @@ def main(args: Optional[List[str]] = None) -> None:
     parser.add_argument(
         "--verbose", "-v",
         action="store_true")
+    parser.add_argument(
+        "--version", "-V",
+        action='version',
+        version=f"Annotation {__version__}")
 
     args = parser.parse_args(args)
 
