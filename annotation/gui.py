@@ -234,6 +234,8 @@ def main(config, args) -> None:
                     self.buttons.add("Browse", lambda: _diag("datafile", type="file"), self.gridkw, name=f"datafile_btn")
                 elif k == "workdir":
                     self.buttons.add("Browse", lambda: _diag("workdir", type="dir"), self.gridkw, name=f"workdir_btn")
+                elif k == "cmapfile":
+                    self.buttons.add("Browse", lambda: _diag("cmapfile", type="file"), self.gridkw, name=f"cmapfile_btn")
 
             self.buttons.add("Save[Enter]", self.save, self.gridkw, name="save")
             self.buttons.add("Cancel[ESC]", self.close, self.gridkw, name="cancel")
