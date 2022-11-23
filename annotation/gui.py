@@ -1,6 +1,7 @@
 import subprocess
 import webbrowser
 from datetime import datetime
+from pathlib import Path
 from tkinter import (
     Tk,
     ttk,
@@ -196,14 +197,50 @@ def main(config, args) -> None:
 
             self.entries = dict()
 
+            def _diag(k: str, type="file") -> None:
+                _initialfile = Path(self.entries[k].get()).resolve()
+                _initialdir = _initialfile.parent
+                if _initialdir.is_dir():
+                    _initialdir = str(_initialdir)
+                else:
+                    _initialdir = None
+                if _initialfile.is_file():
+                    _initialfile = _initialfile.name
+                else:
+                    if _initialfile.is_dir():
+                        _initialdir = _initialfile
+                    _initialfile = None
+
+                if type == "file":
+                    _path = filedialog.askopenfilename(
+                        title="Choose a file",
+                        initialfile=_initialfile,
+                        initialdir=_initialdir,
+                    )
+                elif type == "dir":
+                    _path = filedialog.askdirectory(
+                        title="Choose a directory",
+                        initialdir=_initialdir,
+                    )
+                else:
+                    raise ValueError("invalid type")
+
+                self.entries[k].delete(0, END)
+                self.entries[k].insert(END, _path)
+
             config = data.get_config(str=True)
             for k, v in config.items():
                 self.labels.add(f"{k}: {config_messages.__getattribute__(k)}", self.labelkw, self.gridkw, name=k)
-                self.entries[k] = Entry(self.frm, width=50)
+                self.entries[k] = Entry(self.frm, width=80)
                 self.entries[k].insert(END, str(v))
                 self.entries[k].grid(**self.gridkw.pull())
-            self.buttons.add("Save[Enter]", self.save, self.gridkw)
-            self.buttons.add("Cancel[ESC]", self.close, self.gridkw)
+                if k == "datafile":
+                    self.buttons.add("Browse", lambda: _diag("datafile", type="file"), self.gridkw, name=f"datafile_btn")
+                elif k == "workdir":
+                    self.buttons.add("Browse", lambda: _diag("workdir", type="dir"), self.gridkw, name=f"workdir_btn")
+
+            self.buttons.add("Save[Enter]", self.save, self.gridkw, name="save")
+            self.buttons.add("Cancel[ESC]", self.close, self.gridkw, name="cancel")
 
             # keybind
             self.bind("<Return>", self.save)
