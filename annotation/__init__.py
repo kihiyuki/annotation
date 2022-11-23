@@ -6,7 +6,7 @@ from .gui import main as gui_main
 from .messages import messages, option_messages
 from .lib import config as configlib
 from .data import Data, Config, CONFIG_DEFAULT
-from .version import __version__
+from .info import __version__, APPNAME
 
 
 __all__ = (
@@ -67,7 +67,7 @@ def main(args: Optional[List[str]] = None) -> None:
     parser.add_argument(
         "--version", "-V",
         action='version',
-        version=f"Annotation {__version__}")
+        version=APPNAME)
 
     args = parser.parse_args(args)
 

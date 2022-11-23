@@ -17,11 +17,7 @@ from tkinter import (
 from .messages import option_messages, config_messages
 from .lib import config as configlib
 from .data import Data, Config
-from .version import __version__
-
-
-APPNAME = f"Annotation tool v{__version__}"
-URL = "https://github.com/kihiyuki/annotation/"
+from .info import __version__, APPNAME, GITHUB
 
 
 class LabelKw(dict):
@@ -180,7 +176,7 @@ def main(config, args) -> None:
             ret = super().__init__(title="About")
 
             self.labels.add(APPNAME, self.labelkw.big, self.gridkw, name="APPNAME")
-            self.labels.add(URL, self.labelkw, self.gridkw, name="URL")
+            self.labels.add(GITHUB, self.labelkw, self.gridkw, name="GITHUB")
 
             self.buttons.add("GitHub", self.open_github, self.gridkw)
             self.buttons.add("Close", self.close, self.gridkw)
@@ -188,7 +184,7 @@ def main(config, args) -> None:
             return ret
 
         def open_github(event=None) -> None:
-            webbrowser.open_new(URL)
+            webbrowser.open_new(GITHUB)
             return None
 
     class ConfigWindow(SubWindow):
@@ -289,7 +285,7 @@ def main(config, args) -> None:
         subprocess.Popen(["explorer",  data.workdir], shell=True)
 
     def _clear(event=None):
-        r = messagebox.askyesno("Clear", f"Clear working directory '{data.workdir.resolve()}'?")
+        r = messagebox.askyesno("Clear", f"{option_messages.clearworkdir} '{data.workdir.resolve()}'?")
         if r:
             data.workdir.clear()
 
@@ -356,28 +352,28 @@ def main(config, args) -> None:
     _reload(config=config)
 
     labels.add(datasetinfo.get("date"), labelkw, gridkw, name="date", fullspan=True)
-    labels.add("Dataset info", labelkw.big, gridkw, name="title.dataset", fullspan=True)
+    labels.add("Dataset info", labelkw.big, gridkw, name="title.d", fullspan=True)
     for k in ["datafile", "workdir"]:
         labels.add(datasetinfo.get(k), labelkw, gridkw, name=k, fullspan=True)
     for k in ["count_all", "count_annotated"]:
         labels.add(datasetinfo.get(k), labelkw, gridkw, name=k, fullspan=True)
 
-    labels.add("Annotation", labelkw.big, gridkw, name="title.annotation", fullspan=True)
+    labels.add("Annotating", labelkw.big, gridkw, name="title.a", fullspan=True)
     buttons.add("[D]eploy", _deploy, gridkw, name="deploy")
     buttons.add("[R]egister", _register, gridkw, name="register")
     gridkw.lf()
 
-    labels.add("Working directory", labelkw.big, gridkw, name="title.workdir", fullspan=True)
+    labels.add("Working directory", labelkw.big, gridkw, name="title.w", fullspan=True)
     buttons.add("[O]pen", _open, gridkw, name="open")
     buttons.add("Clear", _clear, gridkw, name="clear")
     gridkw.lf()
 
-    labels.add("Result", labelkw.big, gridkw, name="title.result", fullspan=True)
+    labels.add("Result", labelkw.big, gridkw, name="title.r", fullspan=True)
     buttons.add("Deploy", _deploy_result, gridkw, name="deploy_result")
     buttons.add("Export", _export, gridkw, name="export")
     gridkw.lf()
 
-    labels.add("----", labelkw.big, gridkw, name="title.tail", fullspan=True)
+    labels.add("----", labelkw.big, gridkw, name="title.t", fullspan=True)
     buttons.add("Config", _config, gridkw, name="config")
     buttons.add("Reload[F5]", _reload, gridkw, name="reload")
     buttons.add("Quit[Esc]", _close, gridkw, name="quit")

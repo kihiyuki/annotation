@@ -1,18 +1,17 @@
-# 簡易アノテーションツール
+# Annotation tool for WM811K-like dataset
 
-1チャンネル2次元の画像(numpy.ndarray)を含むデータセット
-(WM-811KライクなPickleファイル)を読み込み、
-アノテーションするためのツール。
-
-アノテーション作業自体はファイルマネージャ上で
-**画像ファイルをディレクトリに振り分ける**
-ことで行う。
+- WM-811Kライクなデータセット
+  (1チャンネル2次元の画像(numpy.ndarray)を含む、DataFrameのPickleファイル)
+  用のアノテーションツールです。
+- ファイルマネージャ(エクスプローラ)上で
+  **画像ファイルをディレクトリに振り分け、**
+  振り分けた結果をデータセットに登録していくことでアノテーションを行います。
 
 ![](doc/img/dir.png)
 
 ## 使い方
 
-### 基本的な流れ
+### 基本手順
 
 1. Deploy: 画像データが含まれるPickleファイル(DataFrame)をロードし、
   アノテーション対象画像とラベル名のディレクトリ、および見本画像を
@@ -22,16 +21,18 @@
 1. Register: アノテーション作業の結果をDataFrameのラベル列に登録し、
   Pickleファイルに保存する。
 
-### GUIで使う
+### GUIで実行する
 
-※Windows
+※Windows専用
 
-- `annotation.bat` をダブルクリックして実行する。
+![](doc/img/gui.png)
+
+- `annotation.bat` を実行する。
 - 「Deploy」ボタンまたは「D」キーで、Deploy。
 - 「Open」ボタンまたは「O」キーで作業ディレクトリを開く。
 - 「Register」ボタンまたは「R」キーで、Register。
 
-### コマンドで使う
+### コマンドで実行する
 
 ```sh
 # Deploy
@@ -60,6 +61,7 @@ optional arguments:
   --config-section CONFIG_SECTION
                         Configuration section name
   --verbose, -v
+  --version, -V
 ```
 
 ```sh

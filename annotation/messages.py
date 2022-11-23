@@ -17,6 +17,7 @@ class __OptionMessages(object):
     deploy: str = "Deploy data to working directory"
     register: str = "Register annotation results to datafile"
     deployresult: str = "Deploy results (all annotated images)"
+    clearworkdir: str = "Clear working directory"
 
 option_messages = __OptionMessages()
 
