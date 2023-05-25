@@ -132,5 +132,7 @@ dmypy.json
 # *.png
 *.pkl*
 *.ini*
-work/
+work*/
 *.ipynb
+[0-9]*.py
+*.lnk
